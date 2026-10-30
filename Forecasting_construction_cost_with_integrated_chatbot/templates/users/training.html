@@ -1,0 +1,248 @@
+{% extends 'users/userbase.html' %}
+{% block content %}
+{% load static %}
+
+<style>
+    .training-container {
+        max-width: 1200px;
+        margin: 2rem auto;
+        padding: 2rem;
+    }
+
+    .training-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+
+    .training-header h1 {
+        font-size: 2.5rem;
+        color: #333;
+        margin-bottom: 0.5rem;
+    }
+
+    .training-header p {
+        color: #666;
+        font-size: 1.1rem;
+    }
+
+    .train-card {
+        background: white;
+        border-radius: 20px;
+        padding: 3rem;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+
+    .train-btn {
+        padding: 1.2rem 3rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        font-size: 1.2rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .train-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+    }
+
+    .results-section {
+        margin-top: 3rem;
+    }
+
+    .model-results {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-bottom: 3rem;
+    }
+
+    .model-card {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+
+    .model-card h2 {
+        font-size: 1.8rem;
+        margin-bottom: 1.5rem;
+        color: #333;
+    }
+
+    .model-card.rf {
+        border-top: 4px solid #2ecc71;
+    }
+
+    .model-card.xgb {
+        border-top: 4px solid #3498db;
+    }
+
+    .metric {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.8rem 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .metric:last-child {
+        border-bottom: none;
+    }
+
+    .metric-label {
+        font-weight: 600;
+        color: #555;
+    }
+
+    .metric-value {
+        font-weight: 700;
+        color: #667eea;
+        font-size: 1.1rem;
+    }
+
+    .visualizations {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+
+    .visualizations h2 {
+        text-align: center;
+        font-size: 2rem;
+        margin-bottom: 2rem;
+        color: #333;
+    }
+
+    .graphs {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+    }
+
+    .graph-item {
+        text-align: center;
+    }
+
+    .graph-item img {
+        width: 100%;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .graph-item h3 {
+        margin-top: 1rem;
+        color: #555;
+        font-size: 1.1rem;
+    }
+
+    .info-box {
+        background: #f0f4ff;
+        border-left: 4px solid #667eea;
+        padding: 1.5rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+    }
+
+    .info-box p {
+        color: #555;
+        margin: 0;
+        line-height: 1.6;
+    }
+
+    @media (max-width: 768px) {
+        .training-container {
+            padding: 1rem;
+        }
+
+        .train-card {
+            padding: 2rem;
+        }
+
+        .model-results {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<div class="training-container">
+    <div class="training-header">
+        <h1>⚙️ Model Training Dashboard</h1>
+        <p>Train machine learning models on construction cost data</p>
+    </div>
+
+    <div class="info-box">
+        <p>💡 <strong>About Training:</strong> This process trains Random Forest and XGBoost models on 10,000+ construction projects. The models learn patterns from area, location, material quality, and other factors to predict accurate costs.</p>
+    </div>
+
+    <div class="train-card">
+        <form method="POST">
+            {% csrf_token %}
+            <h2 style="margin-bottom: 1.5rem; color: #333;">🚀 Start Model Training</h2>
+            <p style="color: #666; margin-bottom: 2rem;">Click below to train the ML models. This may take a few moments.</p>
+            <button type="submit" class="train-btn">🤖 Train Models Now</button>
+        </form>
+    </div>
+
+    {% if rf_train_score %}
+    <div class="results-section">
+        <div class="model-results">
+            <div class="model-card rf">
+                <h2>🌲 Random Forest</h2>
+                <div class="metric">
+                    <span class="metric-label">Training Score (R²)</span>
+                    <span class="metric-value">{{ rf_train_score }}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Testing Score (R²)</span>
+                    <span class="metric-value">{{ rf_test_score }}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Mean Absolute Error</span>
+                    <span class="metric-value">₹{{ rf_mae }}</span>
+                </div>
+            </div>
+
+            <div class="model-card xgb">
+                <h2>⚡ XGBoost</h2>
+                <div class="metric">
+                    <span class="metric-label">Training Score (R²)</span>
+                    <span class="metric-value">{{ xgb_train_score }}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Testing Score (R²)</span>
+                    <span class="metric-value">{{ xgb_test_score }}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Mean Absolute Error</span>
+                    <span class="metric-value">₹{{ xgb_mae }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="visualizations">
+            <h2>📊 Model Performance Visualizations</h2>
+            <div class="graphs">
+                <div class="graph-item">
+                    <img src="{% static 'plots/actual_vs_pred.png' %}" alt="Actual vs Predicted">
+                    <h3>Actual vs Predicted Costs</h3>
+                </div>
+                <div class="graph-item">
+                    <img src="{% static 'plots/error.png' %}" alt="Error Distribution">
+                    <h3>Prediction Error Distribution</h3>
+                </div>
+                <div class="graph-item">
+                    <img src="{% static 'plots/feature.png' %}" alt="Feature Importance">
+                    <h3>Feature Importance Analysis</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}

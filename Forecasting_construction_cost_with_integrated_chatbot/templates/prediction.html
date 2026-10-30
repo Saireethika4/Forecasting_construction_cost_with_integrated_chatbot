@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Construction Cost Prediction</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            background: linear-gradient(to right, #141e30, #243b55);
+            color: white;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .container {
+            width: 60%;
+            margin: auto;
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0px 0px 10px #000;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        input, select {
+            width: 80%;
+            padding: 10px;
+            margin: 10px;
+            border-radius: 8px;
+            border: none;
+            outline: none;
+        }
+
+        button {
+            padding: 12px 25px;
+            background: #00c6ff;
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0072ff;
+        }
+
+        .result {
+            margin-top: 25px;
+            font-size: 24px;
+            color: #00ffcc;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>🏗️ Construction Cost Prediction</h1>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <!-- Area -->
+        <input type="number" name="area" placeholder="Enter Area (sq.ft)" required>
+
+        <!-- Floors -->
+        <input type="number" name="floors" placeholder="Number of Floors" required>
+
+        <!-- City -->
+        <select name="city" required>
+            <option value="">Select City</option>
+            {% for c in cities %}
+                <option value="{{ c }}">{{ c }}</option>
+            {% endfor %}
+        </select>
+
+        <!-- State -->
+        <select name="state" required>
+            <option value="">Select State</option>
+            {% for s in states %}
+                <option value="{{ s }}">{{ s }}</option>
+            {% endfor %}
+        </select>
+
+        <!-- Material Quality -->
+        <select name="quality" required>
+            <option value="">Material Quality</option>
+            {% for q in qualities %}
+                <option value="{{ q }}">{{ q }}</option>
+            {% endfor %}
+        </select>
+
+        <!-- Building Type -->
+        <select name="btype" required>
+            <option value="">Building Type</option>
+            {% for t in types %}
+                <option value="{{ t }}">{{ t }}</option>
+            {% endfor %}
+        </select>
+
+        <!-- Material Cost -->
+        <input type="number" name="material_cost" placeholder="Material Cost (₹)" required>
+
+        <!-- Labor Cost -->
+        <input type="number" name="labor_cost" placeholder="Labor Cost (₹)" required>
+
+        <br>
+        <button type="submit">🔮 Predict Cost</button>
+    </form>
+
+    {% if prediction %}
+    <div class="result">
+        💰 Estimated Total Cost: ₹ {{ prediction|floatformat:2 }}
+    </div>
+    {% endif %}
+
+</div>
+
+</body>
+</html>
+

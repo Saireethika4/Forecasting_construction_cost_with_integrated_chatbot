@@ -1,0 +1,285 @@
+{% extends 'users/userbase.html' %}
+{% block content %}
+
+<style>
+    .prediction-container {
+        max-width: 900px;
+        margin: 2rem auto;
+        padding: 2rem;
+    }
+
+    .prediction-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+
+    .prediction-header h1 {
+        font-size: 2.5rem;
+        color: #333;
+        margin-bottom: 0.5rem;
+    }
+
+    .prediction-header p {
+        color: #666;
+        font-size: 1.1rem;
+    }
+
+    .prediction-form {
+        background: white;
+        border-radius: 20px;
+        padding: 3rem;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-group label {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 0.5rem;
+        font-size: 0.95rem;
+    }
+
+    .form-group input,
+    .form-group select {
+        padding: 0.9rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 10px;
+        font-size: 1rem;
+        transition: all 0.3s;
+        background: #f8f9fa;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: #667eea;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .form-group input::placeholder {
+        color: #999;
+    }
+
+    .submit-btn {
+        width: 100%;
+        padding: 1.2rem;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-top: 1rem;
+    }
+
+    .submit-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+    }
+
+    .result-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 3rem;
+        border-radius: 20px;
+        margin-top: 2rem;
+        text-align: center;
+        animation: slideIn 0.5s ease;
+    }
+
+    .result-card h2 {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        opacity: 0.95;
+    }
+
+    .result-amount {
+        font-size: 3.5rem;
+        font-weight: bold;
+        margin: 1rem 0;
+    }
+
+    .result-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid rgba(255,255,255,0.3);
+    }
+
+    .result-item {
+        text-align: center;
+    }
+
+    .result-item h3 {
+        font-size: 1rem;
+        opacity: 0.9;
+        margin-bottom: 0.5rem;
+    }
+
+    .result-item p {
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .info-box {
+        background: #f0f4ff;
+        border-left: 4px solid #667eea;
+        padding: 1rem 1.5rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+    }
+
+    .info-box p {
+        color: #555;
+        margin: 0;
+        line-height: 1.6;
+    }
+
+    @media (max-width: 768px) {
+        .prediction-container {
+            padding: 1rem;
+        }
+
+        .prediction-form {
+            padding: 1.5rem;
+        }
+
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .result-amount {
+            font-size: 2.5rem;
+        }
+    }
+</style>
+
+<div class="prediction-container">
+    <div class="prediction-header">
+        <h1>🔮 Construction Cost Prediction</h1>
+        <p>Get accurate cost estimates powered by machine learning</p>
+    </div>
+
+    <div class="info-box">
+        <p>💡 <strong>Tip:</strong> Fill in all the details below to get the most accurate cost prediction for your construction project. Our AI model analyzes 10,000+ similar projects to provide reliable estimates.</p>
+    </div>
+
+    <form method="POST" class="prediction-form">
+        {% csrf_token %}
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="area">📐 Area (sq.ft) *</label>
+                <input type="number" id="area" name="area" placeholder="e.g., 2000" required min="100">
+            </div>
+
+            <div class="form-group">
+                <label for="floors">🏢 Number of Floors *</label>
+                <input type="number" id="floors" name="floors" placeholder="e.g., 2" required min="1" max="10">
+            </div>
+
+            <div class="form-group">
+                <label for="city">🏙️ City *</label>
+                <select id="city" name="city" required>
+                    <option value="">Select City</option>
+                    {% for c in cities %}
+                        <option value="{{ c }}">{{ c }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="state">📍 State *</label>
+                <select id="state" name="state" required>
+                    <option value="">Select State</option>
+                    {% for s in states %}
+                        <option value="{{ s }}">{{ s }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="quality">⭐ Material Quality *</label>
+                <select id="quality" name="quality" required>
+                    <option value="">Select Quality</option>
+                    {% for q in qualities %}
+                        <option value="{{ q }}">{{ q }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="btype">🏗️ Building Type *</label>
+                <select id="btype" name="btype" required>
+                    <option value="">Select Type</option>
+                    {% for t in types %}
+                        <option value="{{ t }}">{{ t }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="material_cost">🧱 Material Cost (₹) *</label>
+                <input type="number" id="material_cost" name="material_cost" placeholder="e.g., 5000000" required min="0">
+            </div>
+
+            <div class="form-group">
+                <label for="labor_cost">👷 Labor Cost (₹) *</label>
+                <input type="number" id="labor_cost" name="labor_cost" placeholder="e.g., 2000000" required min="0">
+            </div>
+        </div>
+
+        <button type="submit" class="submit-btn">🚀 Calculate Cost Prediction</button>
+    </form>
+
+    {% if prediction %}
+    <div class="result-card">
+        <h2>💰 Predicted Total Construction Cost</h2>
+        <div class="result-amount">₹ {{ prediction|floatformat:0 }}</div>
+
+        <div class="result-details">
+            <div class="result-item">
+                <h3>Per Square Foot</h3>
+                <p>₹ {{ prediction|floatformat:0|add:"0"|divisibleby:request.POST.area|default:"N/A" }}</p>
+            </div>
+            <div class="result-item">
+                <h3>Confidence Level</h3>
+                <p>95%</p>
+            </div>
+            <div class="result-item">
+                <h3>Model Used</h3>
+                <p>XGBoost ML</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}

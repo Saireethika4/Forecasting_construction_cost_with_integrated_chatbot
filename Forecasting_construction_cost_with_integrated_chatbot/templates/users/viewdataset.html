@@ -1,0 +1,11 @@
+{% extends 'users/userbase.html' %}
+
+{% block content %}
+    <div class="content-container">
+        <h2 class="title">Hypertension Dataset</h2>
+        <div class="table-container">
+            <!-- Render the table using the safe filter -->
+            {{ table|safe }}
+        </div>
+    </div>
+{% endblock %}

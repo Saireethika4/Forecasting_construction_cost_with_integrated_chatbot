@@ -1,0 +1,331 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Construction Cost Estimator{% endblock %}</title>
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+
+    <!-- GSAP + ScrollTrigger -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #ec4899;
+            --accent: #f59e0b;
+            --success: #10b981;
+            --dark: #1e2937;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 100%);
+            overflow-x: hidden;
+        }
+
+        /* Vibrant Hero Section */
+        .hero-section {
+            min-height: 100vh;
+            background: linear-gradient(
+                rgba(30, 41, 59, 0.75),
+                rgba(30, 41, 59, 0.82)
+            ),
+            url('https://images.unsplash.com/photo-1621905251189-08b45d6a269e?ixlib=rb-4.0.3&auto=format&fit=crop&q=85') center/cover no-repeat fixed;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .hero-content {
+            color: white;
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .hero-content h1 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 4.8rem;
+            font-weight: 700;
+            line-height: 1.05;
+            margin-bottom: 1rem;
+            background: linear-gradient(90deg, #a5b4fc, #f472b6, #fed7aa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: titleGlow 4s ease-in-out infinite alternate;
+        }
+
+        .hero-content p {
+            font-size: 1.45rem;
+            font-weight: 300;
+            opacity: 0.95;
+            margin-bottom: 2.5rem;
+        }
+
+        /* Colorful CTA Button */
+        .cta-button {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 18px 50px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            box-shadow: 0 15px 40px rgba(99, 102, 241, 0.5);
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-10px) scale(1.05);
+            box-shadow: 0 25px 55px rgba(236, 72, 153, 0.6);
+        }
+
+        .cta-button::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 40%;
+            height: 200%;
+            background: rgba(255,255,255,0.3);
+            transform: rotate(30deg);
+            transition: all 0.6s;
+            opacity: 0;
+        }
+
+        .cta-button:hover::after {
+            left: 120%;
+            opacity: 1;
+        }
+
+        /* Navbar */
+        .navbar {
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(15px);
+        }
+
+        .navbar-brand {
+            font-family: 'Poppins', sans-serif;
+            font-size: 2.1rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-link {
+            color: white !important;
+            font-weight: 500;
+            transition: 0.3s;
+        }
+
+        .nav-link:hover {
+            color: var(--accent) !important;
+            transform: scale(1.1);
+        }
+
+        /* Colorful Section Cards */
+        .section-card {
+            background: white;
+            border-radius: 28px;
+            padding: 40px;
+            margin: 40px 0;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            transition: all 0.5s ease;
+            border: 1px solid rgba(99, 102, 241, 0.1);
+        }
+
+        .section-card:hover {
+            transform: translateY(-20px) scale(1.02);
+            box-shadow: 0 35px 80px rgba(99, 102, 241, 0.25);
+        }
+
+        .feature-icon {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.6rem;
+            margin: 0 auto 20px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+            transition: all 0.4s ease;
+        }
+
+        .icon1 { background: linear-gradient(135deg, #6366f1, #818cf8); }
+        .icon2 { background: linear-gradient(135deg, #ec4899, #f472b6); }
+        .icon3 { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
+        .icon4 { background: linear-gradient(135deg, #10b981, #34d399); }
+
+        .section-card:hover .feature-icon {
+            transform: scale(1.15) rotate(10deg);
+        }
+
+        /* Footer */
+        footer {
+            background: linear-gradient(135deg, var(--dark), #334155);
+            color: #e2e8f0;
+            padding: 70px 0 40px;
+        }
+
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 65px;
+            height: 65px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.7rem;
+            box-shadow: 0 15px 40px rgba(99, 102, 241, 0.5);
+            z-index: 1000;
+            transition: all 0.4s ease;
+        }
+
+        .back-to-top:hover {
+            transform: rotate(360deg) scale(1.1);
+        }
+
+        .floating-icon {
+            position: absolute;
+            font-size: 6rem;
+            opacity: 0.09;
+            pointer-events: none;
+            animation: floatAnimation 25s ease-in-out infinite;
+        }
+
+        @keyframes floatAnimation {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-40px) rotate(15deg); }
+        }
+
+        @keyframes titleGlow {
+            from { filter: brightness(1); }
+            to { filter: brightness(1.15); }
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="#">🏗️ CostEstimator <span style="color:#f59e0b;">AI</span></a>
+        
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <div class="ms-auto d-flex gap-4">
+                <a class="nav-link" href="{% url 'index' %}">Home</a>
+                <a class="nav-link" href="{% url 'UserLogin' %}">User Login</a>
+                <a class="nav-link" href="{% url 'AdminLoginCheck' %}">Admin</a>
+                <a class="nav-link" href="{% url 'UserRegister' %}">Register</a>
+                
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Hero Section (ONLY for homepage content if needed) -->
+<section class="hero-section">
+    <div class="floating-icon" style="top: 15%; left: 8%;">🏗️</div>
+    <div class="floating-icon" style="top: 55%; right: 10%; font-size: 5rem;">🏢</div>
+
+    <div class="container">
+        <div class="hero-content">
+            <h1>Smart Construction Cost Estimator</h1>
+            <p>AI-powered predictions for smarter planning & budgeting</p>
+            <a href="{% url 'UserLogin' %}" class="btn cta-button">Get Started</a>
+        </div>
+    </div>
+</section>
+
+<!-- ✅ PAGE CONTENT (LOGIN / REGISTER / ADMIN will come here) -->
+<main class="container py-5">
+    {% block content %}
+    {% endblock %}
+
+<!-- Footer -->
+<footer class="text-center">
+    <div class="container">
+        <p class="mb-2 fs-5">&copy; 2026 Construction Cost Estimator AI • Built with Passion</p>
+        <p id="datetime" class="small"></p>
+    </div>
+</footer>
+
+<!-- Back to Top -->
+<a href="#" class="back-to-top">
+    <i class="fas fa-arrow-up"></i>
+</a>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    gsap.registerPlugin(ScrollTrigger);
+
+    // Hero Animation
+    gsap.from(".hero-content", {
+        opacity: 0,
+        y: 120,
+        scale: 0.95,
+        duration: 1.6,
+        ease: "power4.out"
+    });
+
+    // Staggered card animations
+    gsap.utils.toArray(".section-card").forEach((card, i) => {
+        gsap.from(card, {
+            opacity: 0,
+            y: 100,
+            rotation: i % 2 === 0 ? -5 : 5,
+            duration: 1.2,
+            delay: i * 0.2,
+            scrollTrigger: {
+                trigger: card,
+                start: "top 85%",
+            }
+        });
+    });
+
+    // Date & Time
+    function updateDateTime() {
+        const now = new Date();
+        document.getElementById("datetime").innerText = 
+            now.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) + 
+            " • " + now.toLocaleTimeString('en-IN');
+    }
+    setInterval(updateDateTime, 1000);
+    updateDateTime();
+
+    // Back to top
+    document.querySelector('.back-to-top').addEventListener('click', (e) => {
+        e.preventDefault();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+</script>
+
+</body>
+</html>

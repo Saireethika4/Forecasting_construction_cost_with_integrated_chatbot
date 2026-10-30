@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+<!-- Hero Section -->
+<section class="hero">
+    <div class="container">
+        <div class="hero-content">
+            <h1>AI-Powered Construction<br>Cost Estimation</h1>
+            <p>Predict accurate material and project costs using ML</p>
+
+            <div class="hero-buttons">
+                <a href="{% url 'UserRegister' %}" class="btn btn-primary">Get Started</a>
+                <a href="{% url 'UserLogin' %}" class="btn btn-secondary">Login</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
