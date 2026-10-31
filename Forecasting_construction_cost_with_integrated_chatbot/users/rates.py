@@ -43,12 +43,13 @@ def compare_sites(construction_type, quantity, quality='Medium'):
     return sorted(rows, key=lambda row: row['total'])
 
 
-def site_multiplier(building_type, site):
-    """How much a building type costs on this site compared with plain ground."""
-    rates = {
-        r.site.slug: float(r.rate)
-        for r in ConstructionRate.objects.select_related('site').filter(construction_type__name__istartswith=building_type)
-    }
-    if site.slug not in rates or not rates.get(BASE_SITE):
+def building_multiplier(construction_type, site):
+    """Cost of this building on this site compared with the ML model's base type on plain ground."""
+    base = ConstructionRate.objects.filter(
+        construction_type__slug=construction_type.ml_building_type.lower(), site__slug=BASE_SITE,
+    ).first()
+    rate_filter = {'site': site} if site else {'site__slug': BASE_SITE}
+    rate = construction_type.rates.filter(**rate_filter).first()
+    if base is None or rate is None:
         return 1.0
-    return rates[site.slug] / rates[BASE_SITE]
+    return float(rate.rate) / float(base.rate)

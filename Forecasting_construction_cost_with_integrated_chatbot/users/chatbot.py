@@ -16,7 +16,6 @@ TRADE_WORDS = {
     'tile layer': 'tiler', 'helper': 'helper', 'contractor': 'contractor',
 }
 LABOUR_WORDS = r'labou?r(?:er)?s?|workers?|' + '|'.join(f'{word}s?' for word in TRADE_WORDS)
-BUILDING_SLUGS = ('residential', 'commercial')
 
 
 def has_word(message, pattern):
@@ -60,13 +59,13 @@ def parse_area(message):
 
 # ---- Prediction ----
 
-def prediction_text(area, floors, city, quality, building_type, site=None):
-    result = ml.predict_cost(area, floors, city, quality, building_type)
-    multiplier = rates.site_multiplier(building_type, site) if site else 1.0
+def prediction_text(area, floors, city, quality, construction_type, site=None):
+    result = ml.predict_cost(area, floors, city, quality, construction_type.ml_building_type)
+    multiplier = rates.building_multiplier(construction_type, site)
     total = result['total'] * multiplier
     lines = [
         '**🤖 Cost Prediction**', '',
-        f'• {area:,} sq.ft, {floors} floor(s), {building_type}',
+        f'• {area:,} sq.ft, {floors} floor(s), {construction_type.name}',
         f'• {city}, {quality} quality' + (f', {site.name}' if site else ''), '',
         f'**Estimated total: {money(total)}** (±{result["error_p95"]:.1f}% model error)',
         f'• Material: {money(result["material"] * multiplier)}',
@@ -74,10 +73,14 @@ def prediction_text(area, floors, city, quality, building_type, site=None):
         f'• Per sq.ft: {money(total / area)}',
     ]
     if multiplier != 1.0:
-        lines.append(f'• Includes ×{multiplier:.2f} site factor from the rate table (an indicative assumption)')
+        lines.append(f'• Includes ×{multiplier:.2f} type and site factor from the rate table (an indicative assumption)')
     if result['warning']:
         lines += ['', f'⚠️ {result["warning"]}']
     return '\n'.join(lines)
+
+
+def building_types():
+    return ConstructionType.objects.exclude(ml_building_type='')
 
 
 def flow_steps():
@@ -87,7 +90,8 @@ def flow_steps():
         ('floors', 'How many **floors**?', None),
         ('city', 'Which **city**? ' + ', '.join(options['city_states']), list(options['city_states'])),
         ('quality', 'Which **material quality**? ' + ', '.join(options['qualities']), options['qualities']),
-        ('type', 'Which **building type**? ' + ', '.join(options['types']), options['types']),
+        ('type', 'Which **building type**? ' + ', '.join(t.name for t in building_types()),
+         [t.name for t in building_types()]),
         ('site', 'Which **site**? ' + ', '.join(s.name for s in SiteRegion.objects.all()),
          [s.name for s in SiteRegion.objects.all()]),
     ]
@@ -115,8 +119,8 @@ def continue_flow(request, message):
     else:
         typed = message.lower()
         match = next((c for c in choices if c.lower() == typed or has_word(typed, re.escape(c.lower()))), None)
-        if match is None and key == 'site':
-            found = find_keyword_match(typed, SiteRegion.objects.all())
+        if match is None and key in ('site', 'type'):
+            found = find_keyword_match(typed, SiteRegion.objects.all() if key == 'site' else building_types())
             match = found.name if found else None
         if match is None:
             return f"I didn't recognise that.\n\n{question}"
@@ -128,7 +132,8 @@ def continue_flow(request, message):
         return remaining[0][1]
     request.session.pop(FLOW_KEY, None)
     site = SiteRegion.objects.filter(name=answers['site']).first()
-    return prediction_text(answers['area'], answers['floors'], answers['city'], answers['quality'], answers['type'], site)
+    return prediction_text(answers['area'], answers['floors'], answers['city'], answers['quality'],
+                           ConstructionType.objects.get(name=answers['type']), site)
 
 
 def handle_prediction(message, df):
@@ -143,15 +148,16 @@ def handle_prediction(message, df):
     floors_match = re.search(r'(\d+)\s*(?:-\s*)?(?:floors?|stor(?:e?y|eys|ies))', message)
     floors = int(floors_match.group(1)) if floors_match else 2
     quality = find_value(message, ['Low', 'Medium', 'High']) or 'Medium'
-    building_type = find_value(message, df['Building_Type'].unique()) or 'Residential'
+    named_type = find_keyword_match(message, building_types())
+    construction_type = named_type or ConstructionType.objects.get(slug='residential')
     site = find_keyword_match(message, SiteRegion.objects.all())
-    text = prediction_text(area, floors, city, quality, building_type, site)
+    text = prediction_text(area, floors, city, quality, construction_type, site)
     assumed = []
     if not floors_match:
         assumed.append('2 floors')
     if not has_word(message, 'low|medium|high'):
         assumed.append('Medium quality')
-    if not has_word(message, 'residential|commercial'):
+    if named_type is None:
         assumed.append('Residential')
     return text + (f"\n\nAssumed: {', '.join(assumed)}." if assumed else '')
 
@@ -161,7 +167,7 @@ def handle_prediction(message, df):
 def handle_rates(message):
     construction_type = find_keyword_match(message, ConstructionType.objects.all())
     site = find_keyword_match(message, SiteRegion.objects.all())
-    is_infrastructure = construction_type is not None and construction_type.slug not in BUILDING_SLUGS
+    is_infrastructure = construction_type is not None and not construction_type.uses_ml
     asks_for_rate = has_word(message, r'rates?|per\s+\w+|multiplier')
     if not is_infrastructure and not (asks_for_rate and (construction_type or site)):
         return None

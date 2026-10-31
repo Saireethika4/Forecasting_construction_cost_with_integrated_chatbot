@@ -38,6 +38,10 @@ class ConstructionType(models.Model):
     keywords = models.CharField(max_length=120, blank=True, help_text='Comma-separated words the chatbot recognises')
     material_pct = models.PositiveSmallIntegerField(default=60)
     labour_pct = models.PositiveSmallIntegerField(default=25)
+    ml_building_type = models.CharField(
+        max_length=20, blank=True,
+        help_text='Dataset building type the ML model uses for this, or blank to price from the rate table only',
+    )
     display_order = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
@@ -45,6 +49,10 @@ class ConstructionType(models.Model):
 
     def __str__(self):
         return self.name
+
+    @property
+    def uses_ml(self):
+        return bool(self.ml_building_type)
 
     @property
     def other_pct(self):

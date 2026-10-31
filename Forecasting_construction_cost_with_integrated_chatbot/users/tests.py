@@ -114,7 +114,7 @@ class ModelTests(LoggedInTestCase):
         super().tearDownClass()
 
     def post_prediction(self, **overrides):
-        data = {'area': 2000, 'floors': 2, 'city': 'Mumbai', 'site': 'plain', 'quality': 'Medium', 'btype': 'Residential', **overrides}
+        data = {'area': 2000, 'floors': 2, 'city': 'Mumbai', 'site': 'plain', 'quality': 'Medium', 'btype': 'residential', **overrides}
         return self.client.post(reverse('predict'), data)
 
     def test_training_produces_accurate_models_and_plots(self):
@@ -152,12 +152,37 @@ class ModelTests(LoggedInTestCase):
         self.assertAlmostEqual(hill['total'] / plain, 4370 / 3360, places=3)
         self.assertContains(self.post_prediction(site='hill'), 'Hill Station')
 
+    def test_predict_page_prices_building_types(self):
+        plain = self.post_prediction().context['result']['total']
+        hospital = self.post_prediction(btype='hospital').context['result']
+        self.assertAlmostEqual(hospital['total'] / plain, 1.6, places=2)
+        self.assertContains(self.post_prediction(btype='apartment'), 'Apartment')
+
+    def test_predict_page_prices_infrastructure_without_floors_or_city(self):
+        response = self.client.post(reverse('predict'), {'btype': 'bridge', 'site': 'hill', 'area': '500', 'quality': 'Medium'})
+        result = response.context['result']
+        self.assertAlmostEqual(result['total'], 130000 * 500)
+        self.assertEqual(result['model_label'], 'Rate table')
+        self.assertNotIn('low', result)
+        self.assertContains(response, 'Equipment &amp; Overheads')
+        road = self.client.post(reverse('predict'), {'btype': 'road', 'site': 'plain', 'area': '1.5', 'quality': 'Medium'})
+        self.assertAlmostEqual(road.context['result']['total'], 75000000 * 1.5)
+
+    def test_infrastructure_quotes_keep_other_costs(self):
+        response = self.client.post(reverse('predict'), {
+            'btype': 'bridge', 'site': 'plain', 'area': '100', 'quality': 'Medium',
+            'material_cost': '1000', 'labor_cost': '2000',
+        })
+        result = response.context['result']
+        self.assertAlmostEqual(result['total'], 3000 + result['other'])
+        self.assertGreater(result['other'], 0)
+
     def test_predict_page_uses_known_quotes(self):
         result = self.post_prediction(material_cost='1000000', labor_cost='500000').context['result']
         self.assertEqual(result['total'], 1500000)
 
     def test_predict_page_handles_bad_input(self):
-        for bad in ({'area': 'abc'}, {'area': '-5'}, {'city': 'Atlantis'}, {'site': 'moon'}, {'material_cost': 'nan'}):
+        for bad in ({'area': 'abc'}, {'area': '-5'}, {'area': 'inf'}, {'floors': '0'}, {'city': 'Atlantis'}, {'site': 'moon'}, {'btype': 'spaceship'}, {'material_cost': 'nan'}):
             response = self.post_prediction(**bad)
             self.assertEqual(response.status_code, 200)
             self.assertTrue(response.context['errors'], bad)
@@ -169,6 +194,7 @@ class ModelTests(LoggedInTestCase):
         self.assertIn('Estimated total', self.chat('Predict cost for 2000 sqft in Mumbai'))
         self.assertIn('Hill Station', self.chat('Estimate 2,000 sq ft in Delhi on a hill station'))
         self.assertIn('Which city', self.chat('Estimate cost for 3000 sqft'))
+        self.assertIn('Hospital', self.chat('Estimate a 2000 sqft hospital in Delhi'))
 
     def test_chat_guided_flow(self):
         self.assertIn('area', self.chat('start prediction'))
@@ -211,6 +237,7 @@ class ChatbotTests(LoggedInTestCase):
         self.assertIn('Bridge rates per', self.chat('how much does a bridge cost'))
         self.assertIn('₹65,000,000', self.chat('cost of a 500 sqm bridge on a hill station'))
         self.assertIn('Rates on Water Body', self.chat('rates on a water body'))
+        self.assertIn('Apartment on Hill Station', self.chat('apartment rate on a hill station'))
 
     def test_labour(self):
         call_command('seed_sample_labour', verbosity=0, stdout=open('/dev/null', 'w'))

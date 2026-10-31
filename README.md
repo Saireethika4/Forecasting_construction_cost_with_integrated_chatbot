@@ -25,9 +25,9 @@ Run the tests with `python manage.py test`.
 
 | Area | What it does |
 | --- | --- |
-| Prediction (`/predict/`) | Estimates material, labour and total cost from area, floors, city, quality, building type and site. Known quotes can replace the estimates. |
+| Prediction (`/predict/`) | Estimates cost for what you are building, from apartments and hospitals to bridges and roads. Buildings use the model plus a type and site factor; infrastructure uses the rate table. Known quotes can replace the estimates. |
 | Training (`/train/`) | Trains Random Forest and XGBoost, compares them and keeps the better model. |
-| Rates (`/rates/`) | Prices buildings, bridges, roads, tunnels and retaining walls on plains, hill stations, water bodies, coastal, desert, forest and dense urban sites. |
+| Rates (`/rates/`) | Prices 14 construction types, from buildings to bridges, roads and tunnels, on plains, hill stations, water bodies, coastal, desert, forest and dense urban sites. |
 | Find Labour (`/labour/`) | Searches by place or current location, trade and radius, sorted by distance, with contact details. It also shows public OpenStreetMap listings. |
 | List as Labour (`/labour/register/`) | Lets workers add themselves, with consent. Listings appear after admin approval. |
 | Chatbot (`/chat/`) | Handles guided predictions, rates, labour, and statistics. Other questions go to Gemini when a key is set. |
@@ -37,7 +37,7 @@ Run the tests with `python manage.py test`.
 
 - **The dataset looks formula-generated.** Costs follow fixed rates by city and quality, so the near-perfect model scores will not carry over to real projects. Floors and building type have almost no effect on its costs.
 - **Machine learning covers buildings only.** The dataset has no bridges, roads or tunnels, and no hill or water sites, so those figures come from the rate table.
-- **Rates are indicative.** Road and tunnel starting rates are based on rough published figures. Bridge, retaining wall and site differences are assumptions. Replace them with a schedule of rates or quotes from the admin Rates page before relying on them.
+- **Rates are indicative.** Road and tunnel starting rates are based on rough published figures. Bridge, retaining wall, building type and site differences are assumptions. Replace them with a schedule of rates or quotes from the admin Rates page before relying on them.
 - **Sample labour listings are placeholders.** Remove them with `python manage.py seed_sample_labour --clear`, and add real listings through the admin page or the public form.
 
 ## External services

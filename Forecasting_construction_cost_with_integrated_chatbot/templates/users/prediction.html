@@ -184,11 +184,11 @@
 <div class="prediction-container">
     <div class="prediction-header">
         <h1>🔮 Construction Cost Prediction</h1>
-        <p>Machine learning estimates for residential and commercial buildings</p>
+        <p>Estimates for buildings, bridges, roads and more</p>
     </div>
 
     <div class="info-box">
-        <p>💡 <strong>Tip:</strong> Describe your project and we estimate material and labour costs. If you already have quotes, enter them to use your own figures. For bridges, roads and tunnels, use the <a href="{% url 'rates' %}">Rates page</a>.</p>
+        <p>💡 <strong>Tip:</strong> Describe your project and we estimate material and labour costs. If you already have quotes, enter them to use your own figures. Buildings use the machine learning model. Bridges, roads, tunnels and walls use the <a href="{% url 'rates' %}">rate table</a>.</p>
     </div>
 
     {% for error in errors %}<div class="alert alert-danger">{{ error }}</div>{% endfor %}
@@ -198,16 +198,33 @@
 
         <div class="form-grid">
             <div class="form-group">
-                <label for="area">📐 Area (sq.ft) *</label>
-                <input type="number" id="area" name="area" placeholder="e.g., 2000" value="{{ values.area }}" required min="1">
+                <label for="btype">🏗️ What are you building? *</label>
+                <select id="btype" name="btype" required>
+                    <option value="">Select what you are building</option>
+                    <optgroup label="Buildings">
+                        {% for t in building_types %}
+                            <option value="{{ t.slug }}" data-unit="{{ t.unit }}" data-ml="1" {% if values.btype == t.slug %}selected{% endif %}>{{ t.name }}</option>
+                        {% endfor %}
+                    </optgroup>
+                    <optgroup label="Infrastructure">
+                        {% for t in infrastructure_types %}
+                            <option value="{{ t.slug }}" data-unit="{{ t.unit }}" {% if values.btype == t.slug %}selected{% endif %}>{{ t.name }}</option>
+                        {% endfor %}
+                    </optgroup>
+                </select>
             </div>
 
             <div class="form-group">
+                <label for="area">📐 Size (<span id="unitLabel">sq.ft</span>) *</label>
+                <input type="number" id="area" name="area" placeholder="e.g., 2000" value="{{ values.area }}" required min="0.01" step="any">
+            </div>
+
+            <div class="form-group" data-building-only>
                 <label for="floors">🏢 Number of Floors *</label>
                 <input type="number" id="floors" name="floors" placeholder="e.g., 2" value="{{ values.floors }}" required min="1">
             </div>
 
-            <div class="form-group">
+            <div class="form-group" data-building-only>
                 <label for="city">🏙️ City *</label>
                 <select id="city" name="city" required>
                     <option value="">Select City</option>
@@ -217,7 +234,7 @@
                 </select>
             </div>
 
-            <div class="form-group">
+            <div class="form-group" data-building-only>
                 <label for="state">📍 State</label>
                 <input type="text" id="state" readonly placeholder="Set from the city" tabindex="-1">
             </div>
@@ -242,16 +259,6 @@
             </div>
 
             <div class="form-group">
-                <label for="btype">🏗️ Building Type *</label>
-                <select id="btype" name="btype" required>
-                    <option value="">Select Type</option>
-                    {% for t in types %}
-                        <option value="{{ t }}" {% if values.btype == t %}selected{% endif %}>{{ t }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="form-group">
                 <label for="material_cost">🧱 Material Cost (₹, optional)</label>
                 <input type="number" id="material_cost" name="material_cost" placeholder="Leave blank to estimate" value="{{ values.material_cost }}" min="0">
             </div>
@@ -267,9 +274,11 @@
 
     {% if result %}
     <div class="result-card">
-        <h2>💰 Predicted Total Construction Cost</h2>
+        <h2>💰 Estimated Cost: {{ result.type.name }}</h2>
         <div class="result-amount">₹ {{ result.total|floatformat:"0g" }}</div>
+        {% if result.low %}
         <p>Likely range: ₹{{ result.low|floatformat:"0g" }} – ₹{{ result.high|floatformat:"0g" }} (model error ±{{ result.error_p95|floatformat:1 }}%)</p>
+        {% endif %}
 
         <div class="result-details">
             <div class="result-item">
@@ -280,32 +289,62 @@
                 <h3>Labour</h3>
                 <p>₹ {{ result.labour|floatformat:"0g" }}</p>
             </div>
+            {% if result.other %}
             <div class="result-item">
-                <h3>Per Square Foot</h3>
-                <p>₹ {{ result.per_sqft|floatformat:"0g" }}</p>
+                <h3>Equipment &amp; Overheads</h3>
+                <p>₹ {{ result.other|floatformat:"0g" }}</p>
             </div>
+            {% endif %}
             <div class="result-item">
-                <h3>Site Factor</h3>
+                <h3>Per {{ result.type.unit }}</h3>
+                <p>₹ {{ result.per_unit|floatformat:"0g" }}</p>
+            </div>
+            {% if result.multiplier %}
+            <div class="result-item">
+                <h3>Type &amp; Site Factor</h3>
                 <p>×{{ result.multiplier|floatformat:2 }}</p>
             </div>
+            {% endif %}
             <div class="result-item">
-                <h3>Model Used</h3>
+                <h3>Priced Using</h3>
                 <p>{{ result.model_label }}</p>
             </div>
         </div>
-        <p class="mt-3 mb-0"><small>{{ values.city }}, {{ result.state }} · {{ result.site.name }}. The model error reflects plain-ground city projects; the site factor comes from the indicative rate table and adds its own uncertainty.</small></p>
+        <p class="mt-3 mb-0"><small>
+            {{ result.quantity|floatformat:"-2g" }} {{ result.type.unit }} · {% if result.place %}{{ result.place }} · {% endif %}{{ result.site.name }}.
+            {% if result.low %}The model error reflects general city buildings on plain ground; the type and site factor comes from the indicative rate table and adds its own uncertainty.{% else %}This uses an indicative planning rate, so confirm it with a schedule of rates or contractor quotes.{% endif %}
+        </small></p>
         {% if result.warning %}<p class="mt-2 mb-0"><strong>⚠️ {{ result.warning }}</strong></p>{% endif %}
     </div>
     {% endif %}
 </div>
 
 <script>
+    const typeSelect = document.getElementById('btype');
     const citySelect = document.getElementById('city');
+
     function syncState() {
         document.getElementById('state').value = citySelect.selectedOptions[0].dataset.state || '';
     }
+
+    // Infrastructure is priced by the rate table, so floors and city do not apply
+    function syncType() {
+        const option = typeSelect.selectedOptions[0];
+        const isBuilding = !option.value || option.dataset.ml === '1';
+        document.getElementById('unitLabel').textContent = option.dataset.unit || 'sq.ft';
+        document.querySelectorAll('[data-building-only]').forEach((group) => {
+            group.hidden = !isBuilding;
+            group.querySelectorAll('input:not([readonly]), select').forEach((field) => {
+                field.required = isBuilding;
+                field.disabled = !isBuilding;
+            });
+        });
+    }
+
     citySelect.addEventListener('change', syncState);
+    typeSelect.addEventListener('change', syncType);
     syncState();
+    syncType();
 </script>
 
 {% endblock %}

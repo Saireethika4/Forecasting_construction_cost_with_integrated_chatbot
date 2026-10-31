@@ -77,52 +77,91 @@ def train_model_view(request):
     return render(request, 'users/training.html', context)
 
 
-def _parse_prediction_form(post, options):
+def _parse_prediction_form(post, options, construction_type):
     """Return (cleaned values, list of errors) for the prediction form."""
     errors = []
     cleaned = {}
-    for field, label, minimum in (('area', 'Area', 1), ('floors', 'Floors', 1)):
+    try:
+        cleaned['area'] = float(post.get('area', ''))
+        if not 0 < cleaned['area'] < float('inf'):
+            raise ValueError
+    except ValueError:
+        errors.append('Size must be a number above zero.')
+    cleaned['quality'] = post.get('quality', '')
+    if cleaned['quality'] not in options['qualities']:
+        errors.append('Please choose a valid material quality.')
+    if construction_type and construction_type.uses_ml:
         try:
-            cleaned[field] = int(post.get(field, ''))
-            if cleaned[field] < minimum:
+            cleaned['floors'] = int(post.get('floors', ''))
+            if cleaned['floors'] < 1:
                 raise ValueError
         except ValueError:
-            errors.append(f'{label} must be a whole number of at least {minimum}.')
-    for field, label, choices in (
-        ('city', 'City', options['city_states']),
-        ('quality', 'Material quality', options['qualities']),
-        ('btype', 'Building type', options['types']),
-    ):
-        cleaned[field] = post.get(field, '')
-        if cleaned[field] not in choices:
-            errors.append(f'Please choose a valid {label.lower()}.')
+            errors.append('Floors must be a whole number of at least 1.')
+        cleaned['city'] = post.get('city', '')
+        if cleaned['city'] not in options['city_states']:
+            errors.append('Please choose a valid city.')
     for field, label in (('material_cost', 'Material cost'), ('labor_cost', 'Labour cost')):
         raw = post.get(field, '').strip()
         cleaned[field] = None
         if raw:
             try:
                 cleaned[field] = float(raw)
-                if cleaned[field] < 0 or cleaned[field] != cleaned[field] or cleaned[field] == float('inf'):
+                if not 0 <= cleaned[field] < float('inf'):
                     raise ValueError
             except ValueError:
                 errors.append(f'{label} must be a positive number or left blank.')
     return cleaned, errors
 
 
+def _building_estimate(cleaned, construction_type, site, city_states):
+    """ML estimate for the base building type, scaled by the rate table."""
+    result = ml.predict_cost(cleaned['area'], cleaned['floors'], cleaned['city'], cleaned['quality'], construction_type.ml_building_type)
+    multiplier = rates.building_multiplier(construction_type, site)
+    return {
+        'material': result['material'] * multiplier,
+        'labour': result['labour'] * multiplier,
+        'other': 0,
+        'error_p95': result['error_p95'],
+        'model_label': result['model_label'],
+        'warning': result['warning'],
+        'multiplier': multiplier,
+        'place': f"{cleaned['city']}, {city_states[cleaned['city']]}",
+    }
+
+
+def _infrastructure_estimate(cleaned, construction_type, site):
+    """Infrastructure is outside the training data, so it is priced from the rate table."""
+    result = rates.estimate(construction_type, site, cleaned['area'], cleaned['quality'])
+    if result is None:
+        return None
+    return {
+        'material': result['material'],
+        'labour': result['labour'],
+        'other': result['other'],
+        'model_label': 'Rate table',
+        'unit_rate': result['unit_rate'],
+    }
+
+
 @user_required
 def predict_view(request):
     options = ml.form_options()
     sites = SiteRegion.objects.all()
+    types = ConstructionType.objects.all()
     context = {
         'cities': options['city_states'],
         'qualities': options['qualities'],
-        'types': options['types'],
+        'building_types': [t for t in types if t.uses_ml],
+        'infrastructure_types': [t for t in types if not t.uses_ml],
         'sites': sites,
         'values': request.POST,
     }
 
     if request.method == 'POST':
-        cleaned, errors = _parse_prediction_form(request.POST, options)
+        construction_type = types.filter(slug=request.POST.get('btype', '')).first()
+        cleaned, errors = _parse_prediction_form(request.POST, options, construction_type)
+        if construction_type is None:
+            errors.append('Please choose what you are building.')
         site = sites.filter(slug=request.POST.get('site', '')).first()
         if site is None:
             errors.append('Please choose a valid site location.')
@@ -130,26 +169,26 @@ def predict_view(request):
             context['errors'] = errors
             return render(request, 'users/prediction.html', context)
 
-        result = ml.predict_cost(cleaned['area'], cleaned['floors'], cleaned['city'], cleaned['quality'], cleaned['btype'])
-        multiplier = rates.site_multiplier(cleaned['btype'], site)
-        # Figures the user already knows are quotes, so they are not adjusted by the model or site factor
-        material = cleaned['material_cost'] if cleaned['material_cost'] is not None else result['material'] * multiplier
-        labour_cost = cleaned['labor_cost'] if cleaned['labor_cost'] is not None else result['labour'] * multiplier
-        total = material + labour_cost
-        context['result'] = {
-            'total': total,
-            'material': material,
-            'labour': labour_cost,
-            'per_sqft': total / cleaned['area'],
-            'low': total * (1 - result['error_p95'] / 100),
-            'high': total * (1 + result['error_p95'] / 100),
-            'error_p95': result['error_p95'],
-            'model_label': result['model_label'],
-            'warning': result['warning'],
-            'site': site,
-            'multiplier': multiplier,
-            'state': options['city_states'][cleaned['city']],
-        }
+        if construction_type.uses_ml:
+            result = _building_estimate(cleaned, construction_type, site, options['city_states'])
+        else:
+            result = _infrastructure_estimate(cleaned, construction_type, site)
+            if result is None:
+                context['errors'] = [f'No rate has been set for {construction_type.name} on {site.name}.']
+                return render(request, 'users/prediction.html', context)
+
+        # Figures the user already knows are quotes, so they are not adjusted
+        if cleaned['material_cost'] is not None:
+            result['material'] = cleaned['material_cost']
+        if cleaned['labor_cost'] is not None:
+            result['labour'] = cleaned['labor_cost']
+        total = result['material'] + result['labour'] + result['other']
+        result.update(total=total, per_unit=total / cleaned['area'], site=site,
+                      type=construction_type, quantity=cleaned['area'])
+        if 'error_p95' in result:
+            result['low'] = total * (1 - result['error_p95'] / 100)
+            result['high'] = total * (1 + result['error_p95'] / 100)
+        context['result'] = result
     return render(request, 'users/prediction.html', context)
 
 
