@@ -54,34 +54,40 @@
 
     <h3><i class="fas fa-user-plus"></i> Register</h3>
 
+    {% if form.errors %}
+      <div class="alert alert-danger small">
+        {% for field, errors in form.errors.items %}{% for error in errors %}<div>{{ error }}</div>{% endfor %}{% endfor %}
+      </div>
+    {% endif %}
+
     <!-- ✅ IMPORTANT enctype added -->
     <form method="POST" action="{% url 'UserRegisterForm' %}" enctype="multipart/form-data">
       {% csrf_token %}
 
-      <input type="text" name="name" class="form-control" placeholder="Full Name" required>
+      <input type="text" name="name" value="{{ form.name.value|default_if_none:'' }}" class="form-control" placeholder="Full Name" required>
 
       <!-- ✅ NEW FIELD -->
-      <input type="text" name="loginid" class="form-control" placeholder="Login ID" required>
+      <input type="text" name="loginid" value="{{ form.loginid.value|default_if_none:'' }}" class="form-control" placeholder="Login ID" required>
 
-      <input type="email" name="email" class="form-control" placeholder="Email" required>
+      <input type="email" name="email" value="{{ form.email.value|default_if_none:'' }}" class="form-control" placeholder="Email" required>
 
-      <input type="password" name="password" class="form-control" placeholder="Password" required>
+      <input type="password" name="password" class="form-control" placeholder="Password (8+ chars, upper, lower, number)" required>
 
-      <input type="text" name="mobile" class="form-control" placeholder="Mobile" required>
+      <input type="text" name="mobile" value="{{ form.mobile.value|default_if_none:'' }}" class="form-control" placeholder="Mobile" required>
 
-      <input type="text" name="locality" class="form-control" placeholder="Locality" required>
+      <input type="text" name="locality" value="{{ form.locality.value|default_if_none:'' }}" class="form-control" placeholder="Locality" required>
 
-      <input type="text" name="address" class="form-control" placeholder="Address" required>
+      <input type="text" name="address" value="{{ form.address.value|default_if_none:'' }}" class="form-control" placeholder="Address" required>
 
       <!-- ✅ IMAGE UPLOAD -->
-      <input type="file" name="image" class="form-control">
+      <input type="file" name="image" accept="image/*" class="form-control">
 
       <button type="submit" class="btn btn-primary">Register</button>
     </form>
 
     <div class="small text-center mt-2">
       Already have an account? 
-      <a href="{% url 'UserLoginCheck' %}" style="color:#ffd54f;">Login</a>
+      <a href="{% url 'UserLogin' %}" style="color:#ffd54f;">Login</a>
     </div>
 
   </div>

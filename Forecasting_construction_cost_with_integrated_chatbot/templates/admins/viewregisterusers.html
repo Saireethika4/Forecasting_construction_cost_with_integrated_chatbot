@@ -38,13 +38,15 @@
           <td>{{ user.status }}</td>
           <td>
             {% if user.status == 'waiting' or user.status == 'deactivated' %}
-              <a href="{% url 'activate_users' user.id %}" class="btn btn-success btn-sm mb-1">Activate</a>
+              <form method="POST" action="{% url 'activate_users' user.id %}" class="d-inline">{% csrf_token %}<button class="btn btn-success btn-sm mb-1">Activate</button></form>
             {% elif user.status == 'active' %}
-              <a href="{% url 'deactivate_users' user.id %}" class="btn btn-warning btn-sm mb-1">Deactivate</a>
+              <form method="POST" action="{% url 'deactivate_users' user.id %}" class="d-inline">{% csrf_token %}<button class="btn btn-warning btn-sm mb-1">Deactivate</button></form>
             {% endif %}
-            <a href="{% url 'delete_users' user.id %}" class="btn btn-danger btn-sm">Delete</a>
+            <form method="POST" action="{% url 'delete_users' user.id %}" class="d-inline" onsubmit="return confirm('Delete this user permanently?');">{% csrf_token %}<button class="btn btn-danger btn-sm mb-1">Delete</button></form>
           </td>
         </tr>
+        {% empty %}
+        <tr><td colspan="9" class="text-center">No registered users yet.</td></tr>
         {% endfor %}
       </tbody>
     </table>

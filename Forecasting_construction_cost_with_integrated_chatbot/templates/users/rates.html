@@ -1,0 +1,91 @@
+{% extends 'users/userbase.html' %}
+
+{% block content %}
+<style>
+    .compare-bar { background: linear-gradient(135deg, #667eea, #764ba2); height: 10px; border-radius: 5px; }
+    .rate-summary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border-radius: 15px; padding: 20px; }
+    .rate-summary h3, .rate-summary p { color: white; }
+</style>
+
+<div class="section-card" style="max-width: 1200px;">
+    <h2 class="text-center">🌉 Rates by Construction Type and Site</h2>
+    <div class="alert alert-warning">
+        <strong>Indicative planning rates.</strong> The project dataset only covers city buildings, so these rates are set by an admin rather than predicted. The starting values are rough assumptions. Use a schedule of rates or contractor quotes for tenders and budgets.
+    </div>
+
+    <h4 class="mt-4">Estimate a project</h4>
+    {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+    <form method="GET" class="row g-3 align-items-end">
+        <div class="col-md-3">
+            <label class="form-label" for="type">Construction type</label>
+            <select class="form-select" name="type" id="type" required>
+                {% for t in types %}<option value="{{ t.slug }}" data-unit="{{ t.unit }}" {% if values.type == t.slug %}selected{% endif %}>{{ t.name }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label" for="site">Site location</label>
+            <select class="form-select" name="site" id="site" required>
+                {% for s in sites %}<option value="{{ s.slug }}" {% if values.site == s.slug %}selected{% endif %}>{{ s.name }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label" for="quantity">Quantity (<span id="unit"></span>)</label>
+            <input class="form-control" type="number" min="0.01" step="any" name="quantity" id="quantity" value="{{ values.quantity }}" required>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label" for="quality">Quality</label>
+            <select class="form-select" name="quality" id="quality">
+                {% for q in qualities %}<option value="{{ q }}" {% if values.quality == q or not values.quality and q == 'Medium' %}selected{% endif %}>{{ q }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2"><button class="btn btn-primary w-100">Estimate</button></div>
+    </form>
+
+    {% if result %}
+    <div class="rate-summary mt-4">
+        <h3>{{ chosen_type.name }} on {{ chosen_site.name }}</h3>
+        <p class="fs-3 fw-bold mb-1">₹ {{ result.total|floatformat:"0g" }}</p>
+        <p class="mb-1">{{ quantity|floatformat:"-2g" }} {{ chosen_type.unit }} at ₹{{ result.unit_rate|floatformat:"0g" }} per {{ chosen_type.unit }} ({{ quality }} quality)</p>
+        <p class="mb-1">Material ₹{{ result.material|floatformat:"0g" }} · Labour ₹{{ result.labour|floatformat:"0g" }} · Equipment and overheads ₹{{ result.other|floatformat:"0g" }}</p>
+        <p class="mb-0"><small>{{ chosen_site.description }}</small></p>
+    </div>
+
+    <h4 class="mt-4">Same project on other sites</h4>
+    <table class="table align-middle">
+        {% for row in comparison %}
+        <tr {% if row.site == chosen_site %}class="table-primary fw-bold"{% endif %}>
+            <td style="width: 30%">{{ row.site.name }}</td>
+            <td><div class="compare-bar" style="width: {{ row.width }}%"></div></td>
+            <td class="text-end" style="width: 25%">₹ {{ row.total|floatformat:"0g" }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+
+    <h4 class="mt-4">Rate table (₹ per unit, Medium quality)</h4>
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered align-middle">
+            <thead class="table-dark">
+                <tr><th>Construction type</th>{% for site in sites %}<th title="{{ site.description }}">{{ site.name }}</th>{% endfor %}</tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr>
+                    <th>{{ row.type.name }}<br><small class="fw-normal">per {{ row.type.unit }}</small></th>
+                    {% for cell in row.cells %}<td>{% if cell %}{{ cell.rate|floatformat:"0g" }}{% else %}–{% endif %}</td>{% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const typeSelect = document.getElementById('type');
+    function syncUnit() {
+        document.getElementById('unit').textContent = typeSelect.selectedOptions[0].dataset.unit;
+    }
+    typeSelect.addEventListener('change', syncUnit);
+    syncUnit();
+</script>
+{% endblock %}

@@ -1,20 +1,25 @@
 {% extends 'base.html' %}
-{% load static %}
 
-{% block content %}
+{% block hero %}
+<section class="hero-section">
+    <div class="floating-icon" style="top: 15%; left: 8%;">🏗️</div>
+    <div class="floating-icon" style="top: 55%; right: 10%; font-size: 5rem;">🏢</div>
 
-<!-- Hero Section -->
-<section class="hero">
     <div class="container">
         <div class="hero-content">
-            <h1>AI-Powered Construction<br>Cost Estimation</h1>
-            <p>Predict accurate material and project costs using ML</p>
-
-            <div class="hero-buttons">
-                <a href="{% url 'UserRegister' %}" class="btn btn-primary">Get Started</a>
-                <a href="{% url 'UserLogin' %}" class="btn btn-secondary">Login</a>
-            </div>
+            <h1>Smart Construction Cost Estimator</h1>
+            <p>AI-powered predictions for smarter planning & budgeting</p>
+            <a href="{% url 'UserRegister' %}" class="btn cta-button">Get Started</a>
+            <a href="{% url 'UserLogin' %}" class="btn cta-button">Login</a>
         </div>
     </div>
 </section>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-md-4"><div class="section-card h-100"><h3>🔮 Cost prediction</h3><p>Machine learning estimates for buildings, trained on project data from five major cities.</p></div></div>
+    <div class="col-md-4"><div class="section-card h-100"><h3>🌉 Site-based rates</h3><p>Compare rates for buildings, bridges, roads and tunnels on hills, water bodies and other sites.</p></div></div>
+    <div class="col-md-4"><div class="section-card h-100"><h3>👷 Nearby labour</h3><p>Search for workers near your site, sorted by distance, with their contact details.</p></div></div>
+</div>
 {% endblock %}

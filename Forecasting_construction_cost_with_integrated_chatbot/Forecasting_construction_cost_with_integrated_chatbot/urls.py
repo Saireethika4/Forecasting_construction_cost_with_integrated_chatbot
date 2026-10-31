@@ -35,16 +35,18 @@ urlpatterns = [
 
     path('base/', usr.base, name='base'),
     path('logout/', usr.logout_view, name='logout'),
-    path('base/', usr.base, name='base'),
-    path('logout/', usr.logout_view, name='logout'),
     path('UserLoginCheck/', usr.UserLoginCheck, name='UserLoginCheck'),
     path('UserRegisterForm/', usr.UserRegisterActions, name='UserRegisterForm'),
     path('UserHome/', usr.UserHome, name='UserHome'),
-     path('train/', usr.train_model_view, name='train'),
+    path('train/', usr.train_model_view, name='train'),
     path('predict/', usr.predict_view, name='predict'),
+    path('dataset/', usr.view_dataset, name='dataset'),
+    path('rates/', usr.rates_view, name='rates'),
+    path('labour/', usr.labour_search, name='labour_search'),
+    path('labour/osm/', usr.labour_osm, name='labour_osm'),
+    path('labour/register/', usr.labour_register, name='labour_register'),
     path('chat/', usr.chatbot_view, name='chat'),
     path('chatbot/', usr.chatbot_response, name='chatbot'),
-
 
     path('AdminLogincheck/', admins.adminLoginCheck, name='AdminLoginCheck'),
     path('AdminHome/', admins.adminHome, name='AdminHome'),
@@ -52,6 +54,9 @@ urlpatterns = [
     path('activateUser/<int:id>/', admins.activateUser, name='activate_users'),
     path('deactivateUser/<int:id>/', admins.deactivateUser, name='deactivate_users'),
     path('deleteUser/<int:id>/', admins.deleteUser, name='delete_users'),
+    path('manageRates/', admins.manageRates, name='manage_rates'),
+    path('manageLabour/', admins.manageLabour, name='manage_labour'),
+    path('labourAction/<int:id>/<str:action>/', admins.labourAction, name='labour_action'),
 
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

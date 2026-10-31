@@ -13,7 +13,7 @@
 
     .chat-container {
         width: 100%;
-        max-width: 500px;
+        max-width: 720px;
         background: rgba(255, 255, 255, 0.15);
         backdrop-filter: blur(15px);
         border-radius: 20px;
@@ -35,7 +35,7 @@
     }
 
     .chat-box {
-        height: 350px;
+        height: 450px;
         overflow-y: auto;
         background: #ffffff;
         border-radius: 15px;
@@ -47,7 +47,7 @@
         margin-bottom: 10px;
         padding: 10px 15px;
         border-radius: 20px;
-        max-width: 75%;
+        max-width: 85%;
         animation: slideUp 0.3s ease;
     }
 
@@ -68,6 +68,22 @@
         color: #333;
         margin-right: auto;
         text-align: left;
+    }
+
+    .quick-prompts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 12px;
+    }
+
+    .quick-prompts button {
+        border: 1px solid #667eea;
+        background: white;
+        color: #4c5fd5;
+        border-radius: 15px;
+        padding: 4px 12px;
+        font-size: 0.8rem;
     }
 
     .input-area {
@@ -109,11 +125,18 @@
 
         <h4 class="chat-title">🤖 Construction AI Assistant</h4>
 
-        <div id="chatBox" class="chat-box"></div>
+        <div id="chatBox" class="chat-box" aria-live="polite"></div>
+
+        <div class="quick-prompts">
+            <button type="button">Start prediction</button>
+            <button type="button">Bridge rate on a hill station</button>
+            <button type="button">Masons near Hyderabad</button>
+            <button type="button">Average cost in Delhi</button>
+        </div>
 
         <div class="input-area">
-            <input type="text" id="userInput" placeholder="Ask about construction cost...">
-            <button onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+            <input type="text" id="userInput" maxlength="500" placeholder="Ask about construction cost..." aria-label="Your message">
+            <button type="button" id="sendButton" aria-label="Send"><i class="fas fa-paper-plane"></i></button>
         </div>
 
     </div>
@@ -121,36 +144,55 @@
 </div>
 
 <script>
+const chatBox = document.getElementById("chatBox");
+const inputField = document.getElementById("userInput");
 
-function sendMessage() {
-
-    let inputField = document.getElementById("userInput");
-    let message = inputField.value;
-
-    if(message.trim() === "") return;
-
-    let chatBox = document.getElementById("chatBox");
-
-    // User message
-    chatBox.innerHTML += `<div class="message user">${message}</div>`;
-
-    fetch(`/chatbot/?message=${message}`)
-    .then(response => response.json())
-    .then(data => {
-        chatBox.innerHTML += `<div class="message bot">${data.response}</div>`;
-        chatBox.scrollTop = chatBox.scrollHeight;
+// Text is added with textContent so messages can never inject HTML; only **bold** is formatted
+function addMessage(text, sender) {
+    const bubble = document.createElement("div");
+    bubble.className = `message ${sender}`;
+    bubble.style.whiteSpace = "pre-line";
+    text.split(/\*\*(.+?)\*\*/s).forEach((part, index) => {
+        const node = index % 2 ? document.createElement("strong") : document.createElement("span");
+        node.textContent = part;
+        bubble.appendChild(node);
     });
-
-    inputField.value = "";
+    chatBox.appendChild(bubble);
+    chatBox.scrollTop = chatBox.scrollHeight;
+    return bubble;
 }
 
-// Enter key support
-document.getElementById("userInput").addEventListener("keypress", function(e) {
-    if (e.key === "Enter") {
-        sendMessage();
+async function sendMessage(text) {
+    const message = (text ?? inputField.value).trim();
+    if (!message) return;
+    addMessage(message, "user");
+    inputField.value = "";
+    const pending = addMessage("Thinking…", "bot");
+    let reply;
+    try {
+        const response = await fetch(`{% url 'chatbot' %}?message=${encodeURIComponent(message)}`);
+        if (response.status === 401) {
+            reply = "Your session has ended. Please log in again.";
+        } else if (!response.ok) {
+            reply = "Something went wrong on the server. Please try again.";
+        } else {
+            reply = (await response.json()).response;
+        }
+    } catch (error) {
+        reply = "I couldn't reach the server. Please check your connection and try again.";
     }
-});
+    pending.remove();
+    addMessage(reply, "bot");
+}
 
+document.getElementById("sendButton").addEventListener("click", () => sendMessage());
+inputField.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") sendMessage();
+});
+document.querySelectorAll(".quick-prompts button").forEach((button) => {
+    button.addEventListener("click", () => sendMessage(button.textContent));
+});
+addMessage("Hello! 👋 Ask me about costs, site rates or nearby labour, or say **start prediction**.", "bot");
 </script>
 
 {% endblock %}

@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+.DS_Store
+Forecasting_construction_cost_with_integrated_chatbot/ml_artifacts/

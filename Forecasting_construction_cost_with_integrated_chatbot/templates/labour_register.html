@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}List as Labour | Construction Cost Estimator{% endblock %}
+{% block content %}
+<div class="bg-white text-dark rounded-4 shadow p-4 mx-auto mt-5" style="max-width: 760px;">
+    <h2>👷 List yourself as labour</h2>
+    <p>Workers and contractors can join the directory so that people building nearby can contact them. Listings appear after admin approval.</p>
+    {% for message in messages %}<div class="alert alert-{{ message.tags }}">{{ message }}</div>{% endfor %}
+    <form method="POST">
+        {% csrf_token %}
+        {% include 'labour_form_fields.html' %}
+        <button class="btn btn-primary">Submit listing</button>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,19 @@
+<div class="col-md-6 col-lg-4">
+    <div class="worker-card">
+        <h5>{{ worker.name }}</h5>
+        <p>
+            <span class="badge bg-primary">{{ worker.get_trade_display }}</span>
+            {% if worker.is_available %}<span class="badge bg-success">Available</span>{% else %}<span class="badge bg-secondary">Busy</span>{% endif %}
+            {% if worker.is_sample %}<span class="badge bg-warning text-dark">Sample</span>{% endif %}
+        </p>
+        <p>📍 {% if worker.locality %}{{ worker.locality }}, {% endif %}{{ worker.city }} · {{ worker.distance|floatformat:1 }} km away</p>
+        {% if worker.is_sample %}
+        <p>📞 {{ worker.phone }}</p>
+        {% if worker.email %}<p>✉️ {{ worker.email }}</p>{% endif %}
+        {% else %}
+        <p>📞 <a href="tel:+91{{ worker.phone }}">{{ worker.phone }}</a></p>
+        {% if worker.email %}<p>✉️ <a href="mailto:{{ worker.email }}">{{ worker.email }}</a></p>{% endif %}
+        {% endif %}
+        <p>{% if worker.daily_wage %}💰 ₹{{ worker.daily_wage }}/day · {% endif %}{{ worker.experience_years }} yrs experience</p>
+    </div>
+</div>

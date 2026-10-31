@@ -176,7 +176,7 @@
     </div>
 
     <div class="info-box">
-        <p>💡 <strong>About Training:</strong> This process trains Random Forest and XGBoost models on 10,000+ construction projects. The models learn patterns from area, location, material quality, and other factors to predict accurate costs.</p>
+        <p>💡 <strong>About Training:</strong> This process trains Random Forest and XGBoost on the construction project dataset, then keeps the more accurate model for predictions. The models learn from area, floors, city, material quality and building type. Material and labour costs are predicted, not given as inputs. Near-perfect scores are expected here because the dataset's rates follow a fixed pattern by city and quality, so expect larger errors on real projects.</p>
     </div>
 
     <div class="train-card">
@@ -188,22 +188,23 @@
         </form>
     </div>
 
-    {% if rf_train_score %}
+    {% if bundle %}
     <div class="results-section">
+        <p class="text-center text-muted">Last trained {{ bundle.trained_at }} on {{ bundle.rows }} projects. In use: <strong>{{ bundle.model_label }}</strong>.</p>
         <div class="model-results">
             <div class="model-card rf">
                 <h2>🌲 Random Forest</h2>
                 <div class="metric">
                     <span class="metric-label">Training Score (R²)</span>
-                    <span class="metric-value">{{ rf_train_score }}</span>
+                    <span class="metric-value">{{ metrics.rf.train_r2|floatformat:4 }}</span>
                 </div>
                 <div class="metric">
                     <span class="metric-label">Testing Score (R²)</span>
-                    <span class="metric-value">{{ rf_test_score }}</span>
+                    <span class="metric-value">{{ metrics.rf.test_r2|floatformat:4 }}</span>
                 </div>
                 <div class="metric">
                     <span class="metric-label">Mean Absolute Error</span>
-                    <span class="metric-value">₹{{ rf_mae }}</span>
+                    <span class="metric-value">₹{{ metrics.rf.mae|floatformat:"0g" }} ({{ metrics.rf.mape|floatformat:2 }}%)</span>
                 </div>
             </div>
 
@@ -211,15 +212,15 @@
                 <h2>⚡ XGBoost</h2>
                 <div class="metric">
                     <span class="metric-label">Training Score (R²)</span>
-                    <span class="metric-value">{{ xgb_train_score }}</span>
+                    <span class="metric-value">{{ metrics.xgb.train_r2|floatformat:4 }}</span>
                 </div>
                 <div class="metric">
                     <span class="metric-label">Testing Score (R²)</span>
-                    <span class="metric-value">{{ xgb_test_score }}</span>
+                    <span class="metric-value">{{ metrics.xgb.test_r2|floatformat:4 }}</span>
                 </div>
                 <div class="metric">
                     <span class="metric-label">Mean Absolute Error</span>
-                    <span class="metric-value">₹{{ xgb_mae }}</span>
+                    <span class="metric-value">₹{{ metrics.xgb.mae|floatformat:"0g" }} ({{ metrics.xgb.mape|floatformat:2 }}%)</span>
                 </div>
             </div>
         </div>
@@ -228,15 +229,15 @@
             <h2>📊 Model Performance Visualizations</h2>
             <div class="graphs">
                 <div class="graph-item">
-                    <img src="{% static 'plots/actual_vs_pred.png' %}" alt="Actual vs Predicted">
+                    <img src="{% static 'plots/actual_vs_pred.png' %}?v={{ plot_version }}" alt="Actual vs Predicted">
                     <h3>Actual vs Predicted Costs</h3>
                 </div>
                 <div class="graph-item">
-                    <img src="{% static 'plots/error.png' %}" alt="Error Distribution">
+                    <img src="{% static 'plots/error.png' %}?v={{ plot_version }}" alt="Error Distribution">
                     <h3>Prediction Error Distribution</h3>
                 </div>
                 <div class="graph-item">
-                    <img src="{% static 'plots/feature.png' %}" alt="Feature Importance">
+                    <img src="{% static 'plots/feature.png' %}?v={{ plot_version }}" alt="Feature Importance">
                     <h3>Feature Importance Analysis</h3>
                 </div>
             </div>

@@ -1,4 +1,29 @@
 {% extends 'admins/adminbase.html' %}
 {% block content %}
-<!-- Your admin page content here -->
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="section-card h-100 text-center">
+            <h3>👥 Users</h3>
+            <p class="fs-4 mb-1">{{ total_users }}</p>
+            <p>{{ waiting_users }} waiting for approval</p>
+            <a class="btn btn-primary" href="{% url 'RegisterUsersView' %}">Manage users</a>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="section-card h-100 text-center">
+            <h3>👷 Labour directory</h3>
+            <p class="fs-4 mb-1">{{ labour_listed }}</p>
+            <p>{{ labour_pending }} listings waiting for approval</p>
+            <a class="btn btn-primary" href="{% url 'manage_labour' %}">Manage labour</a>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="section-card h-100 text-center">
+            <h3>🌉 Construction rates</h3>
+            <p class="fs-4 mb-1">{{ rate_count }}</p>
+            <p>type and site combinations</p>
+            <a class="btn btn-primary" href="{% url 'manage_rates' %}">Edit rates</a>
+        </div>
+    </div>
+</div>
 {% endblock %}

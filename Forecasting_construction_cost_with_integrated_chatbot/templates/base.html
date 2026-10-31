@@ -230,42 +230,32 @@
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg fixed-top">
     <div class="container">
-        <a class="navbar-brand" href="#">🏗️ CostEstimator <span style="color:#f59e0b;">AI</span></a>
+        <a class="navbar-brand" href="{% url 'index' %}">🏗️ CostEstimator <span style="color:#f59e0b;">AI</span></a>
         
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
 
         <div class="collapse navbar-collapse" id="navbarNav">
-            <div class="ms-auto d-flex gap-4">
+            <div class="ms-auto d-flex flex-wrap gap-4">
                 <a class="nav-link" href="{% url 'index' %}">Home</a>
                 <a class="nav-link" href="{% url 'UserLogin' %}">User Login</a>
                 <a class="nav-link" href="{% url 'AdminLoginCheck' %}">Admin</a>
                 <a class="nav-link" href="{% url 'UserRegister' %}">Register</a>
+                <a class="nav-link" href="{% url 'labour_register' %}">List as Labour</a>
                 
             </div>
         </div>
     </div>
 </nav>
 
-<!-- Hero Section (ONLY for homepage content if needed) -->
-<section class="hero-section">
-    <div class="floating-icon" style="top: 15%; left: 8%;">🏗️</div>
-    <div class="floating-icon" style="top: 55%; right: 10%; font-size: 5rem;">🏢</div>
-
-    <div class="container">
-        <div class="hero-content">
-            <h1>Smart Construction Cost Estimator</h1>
-            <p>AI-powered predictions for smarter planning & budgeting</p>
-            <a href="{% url 'UserLogin' %}" class="btn cta-button">Get Started</a>
-        </div>
-    </div>
-</section>
+{% block hero %}{% endblock %}
 
 <!-- ✅ PAGE CONTENT (LOGIN / REGISTER / ADMIN will come here) -->
 <main class="container py-5">
     {% block content %}
     {% endblock %}
+</main>
 
 <!-- Footer -->
 <footer class="text-center">

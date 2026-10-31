@@ -124,16 +124,25 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <div class="ms-auto d-flex gap-3">
+                <div class="ms-auto d-flex flex-wrap gap-2">
                     <a class="nav-link" href="{% url 'UserHome' %}"><i class="fas fa-home"></i> Home</a>
                     <a class="nav-link" href="{% url 'train' %}"><i class="fas fa-brain"></i> Training</a>
                     <a class="nav-link" href="{% url 'predict' %}"><i class="fas fa-calculator"></i> Prediction</a>
+                    <a class="nav-link" href="{% url 'rates' %}"><i class="fas fa-mountain"></i> Rates</a>
+                    <a class="nav-link" href="{% url 'labour_search' %}"><i class="fas fa-hard-hat"></i> Find Labour</a>
+                    <a class="nav-link" href="{% url 'dataset' %}"><i class="fas fa-table"></i> Dataset</a>
                     <a class="nav-link" href="{% url 'chat' %}"><i class="fas fa-comments"></i> Chatbot</a>
                     <a class="nav-link" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt"></i> Logout</a>
                 </div>
             </div>
         </div>
     </nav>
+
+    {% if messages %}
+    <div class="container mt-3">
+        {% for message in messages %}<div class="alert alert-{{ message.tags }}">{{ message }}</div>{% endfor %}
+    </div>
+    {% endif %}
 
     {% block content %}
     {% endblock %}
