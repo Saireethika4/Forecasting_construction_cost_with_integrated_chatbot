@@ -4,7 +4,8 @@ from django.contrib.auth.hashers import make_password
 from .labour import resolve_location
 from .models import LabourContact, UserRegistrationModel
 
-MAX_IMAGE_BYTES = 5 * 1024 * 1024
+# Vercel rejects request bodies over 4.5 MB
+MAX_IMAGE_BYTES = 4 * 1024 * 1024
 
 
 class UserRegistrationForm(forms.ModelForm):
@@ -21,7 +22,7 @@ class UserRegistrationForm(forms.ModelForm):
     def clean_image(self):
         image = self.cleaned_data.get('image')
         if image and image.size > MAX_IMAGE_BYTES:
-            raise forms.ValidationError('Image must be 5 MB or smaller.')
+            raise forms.ValidationError('Image must be 4 MB or smaller.')
         return image
 
     def save(self, commit=True):

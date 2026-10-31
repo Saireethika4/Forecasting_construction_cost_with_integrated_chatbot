@@ -12,12 +12,17 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import os
 from pathlib import Path
 
+import dj_database_url
 from django.contrib.messages import constants as message_constants
+from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / '.env')
+
+# Vercel sets this on every deployment
+ON_VERCEL = bool(os.environ.get('VERCEL'))
 
 
 # Quick-start development settings - unsuitable for production
@@ -25,11 +30,21 @@ load_dotenv(BASE_DIR / '.env')
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-local-development-only')
+if ON_VERCEL and SECRET_KEY.startswith('django-insecure'):
+    raise ImproperlyConfigured('Set DJANGO_SECRET_KEY for deployments.')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() == 'true'
+DEBUG = os.environ.get('DJANGO_DEBUG', 'False' if ON_VERCEL else 'True').lower() == 'true'
 
 ALLOWED_HOSTS = [h.strip() for h in os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if h.strip()]
+if ON_VERCEL:
+    ALLOWED_HOSTS.append('.vercel.app')
+    CSRF_TRUSTED_ORIGINS = ['https://*.vercel.app']
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    # Matplotlib needs a writable folder for its font cache
+    os.environ.setdefault('MPLCONFIGDIR', '/tmp/matplotlib')
 
 
 # Application definition
@@ -79,11 +94,10 @@ WSGI_APPLICATION = 'Forecasting_construction_cost_with_integrated_chatbot.wsgi.a
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}", conn_max_age=0)
 }
+if ON_VERCEL and not os.environ.get('DATABASE_URL'):
+    raise ImproperlyConfigured('Set DATABASE_URL for deployments; SQLite data does not persist on Vercel.')
 
 
 # Password validation
@@ -125,6 +139,16 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Uploads, trained models and plots must outlive a serverless instance
+USE_DATABASE_STORAGE = ON_VERCEL
+STORAGES = {
+    'default': {
+        'BACKEND': 'users.storage.DatabaseStorage' if USE_DATABASE_STORAGE else 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'},
+}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -135,6 +159,8 @@ GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-2.5-flash')
 
 ADMIN_LOGIN = os.environ.get('ADMIN_LOGIN', 'admin')
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'admin')
+if ON_VERCEL and (ADMIN_PASSWORD == 'admin' or len(ADMIN_PASSWORD) < 12):
+    raise ImproperlyConfigured('Set a strong ADMIN_PASSWORD of at least 12 characters for deployments.')
 
 # Bootstrap has no "alert-error" class
 MESSAGE_TAGS = {message_constants.ERROR: 'danger'}

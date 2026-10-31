@@ -1,0 +1,12 @@
+.env
+.env.*
+!.env.example
+.venv/
+db.sqlite3
+media/user_images/
+media/plots/
+media/ml_artifacts/
+ml_artifacts/
+staticfiles/
+*.md
+__pycache__/

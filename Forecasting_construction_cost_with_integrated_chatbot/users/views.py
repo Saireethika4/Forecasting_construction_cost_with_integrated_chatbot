@@ -2,17 +2,19 @@ import requests
 from django.contrib import messages
 from django.contrib.auth.hashers import check_password
 from django.core.paginator import Paginator
-from django.http import JsonResponse
+from django.conf import settings
+from django.http import Http404, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_GET
 
 from . import chatbot, labour, ml, rates
 from .decorators import user_required, user_required_json
 from .forms import LabourForm, UserRegistrationForm
-from .models import ConstructionType, LabourContact, SiteRegion, UserRegistrationModel
+from .models import ConstructionType, LabourContact, SiteRegion, StoredFile, UserRegistrationModel
 
 RADIUS_CHOICES = [10, 25, 50, 100, 250, 500]
 MAX_CHAT_MESSAGE = 500
+PUBLIC_FILE_PREFIXES = ('user_images/', 'plots/')
 
 
 def UserRegisterActions(request):
@@ -73,7 +75,7 @@ def train_model_view(request):
     bundle = ml.trained_bundle()
     context = {}
     if bundle:
-        context = {'bundle': bundle, 'metrics': bundle['metrics'], 'plot_version': ml.ARTIFACT_PATH.stat().st_mtime_ns}
+        context = {'bundle': bundle, 'metrics': bundle['metrics'], 'plots': ml.plot_urls()}
     return render(request, 'users/training.html', context)
 
 
@@ -190,6 +192,17 @@ def predict_view(request):
             result['high'] = total * (1 + result['error_p95'] / 100)
         context['result'] = result
     return render(request, 'users/prediction.html', context)
+
+
+@require_GET
+def stored_file(request, name):
+    """Serve a database-stored image. Trained model files are never served."""
+    if not settings.USE_DATABASE_STORAGE or not name.startswith(PUBLIC_FILE_PREFIXES):
+        raise Http404
+    record = StoredFile.objects.filter(name=name).first()
+    if record is None:
+        raise Http404
+    return HttpResponse(bytes(record.content), content_type=record.content_type)
 
 
 @user_required

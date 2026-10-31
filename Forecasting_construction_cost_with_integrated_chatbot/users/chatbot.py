@@ -2,6 +2,7 @@
 import logging
 import re
 
+import requests
 from django.conf import settings
 
 from . import labour, ml, rates
@@ -289,19 +290,25 @@ def ask_gemini(message, df):
     """Answer with Gemini, or None if it is not configured or unavailable."""
     if not settings.GEMINI_API_KEY:
         return None
+    prompt = (
+        'You are a construction cost assistant for India. Answer concisely and practically, and say that '
+        'cost figures are estimates. Reference data: '
+        f'{len(df)} building projects in {", ".join(sorted(df["City"].unique()))}; '
+        f'average cost {money(df["Total_Cost"].mean())}.\n\nQuestion: {message}'
+    )
     try:
-        from google import genai
-        client = genai.Client(api_key=settings.GEMINI_API_KEY, http_options={'timeout': 20000})
-        prompt = (
-            'You are a construction cost assistant for India. Answer concisely and practically, and say that '
-            'cost figures are estimates. Reference data: '
-            f'{len(df)} building projects in {", ".join(sorted(df["City"].unique()))}; '
-            f'average cost {money(df["Total_Cost"].mean())}.\n\nQuestion: {message}'
+        response = requests.post(
+            f'https://generativelanguage.googleapis.com/v1beta/models/{settings.GEMINI_MODEL}:generateContent',
+            headers={'x-goog-api-key': settings.GEMINI_API_KEY},
+            json={'contents': [{'parts': [{'text': prompt}]}]},
+            timeout=20,
         )
-        response = client.models.generate_content(model=settings.GEMINI_MODEL, contents=prompt)
-        return response.text
-    except Exception as error:  # the SDK raises many error types; the chat must still answer
-        logger.warning('Gemini request failed: %s', error)
+        response.raise_for_status()
+        return response.json()['candidates'][0]['content']['parts'][0]['text']
+    except (requests.RequestException, ValueError, KeyError, IndexError) as error:
+        # The exception text can contain the request details, so log only its type and status
+        status = getattr(getattr(error, 'response', None), 'status_code', '')
+        logger.warning('Gemini request failed: %s %s', type(error).__name__, status)
         return None
 
 

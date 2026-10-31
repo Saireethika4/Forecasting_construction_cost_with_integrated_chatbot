@@ -1,0 +1,12 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "Forecasting_construction_cost_with_integrated_chatbot/wsgi.py": {
+      "maxDuration": 60,
+      "excludeFiles": "{**/tests/**,**/*.md,media/user_images/**,db.sqlite3,staticfiles/**}"
+    }
+  },
+  "regions": [
+    "sin1"
+  ]
+}

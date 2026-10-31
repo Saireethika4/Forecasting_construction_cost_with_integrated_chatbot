@@ -176,7 +176,7 @@
     </div>
 
     <div class="info-box">
-        <p>💡 <strong>About Training:</strong> This process trains Random Forest and XGBoost on the construction project dataset, then keeps the more accurate model for predictions. The models learn from area, floors, city, material quality and building type. Material and labour costs are predicted, not given as inputs. Near-perfect scores are expected here because the dataset's rates follow a fixed pattern by city and quality, so expect larger errors on real projects.</p>
+        <p>💡 <strong>About Training:</strong> This process trains the available models (Random Forest, plus XGBoost where installed) on the construction project dataset, then keeps the most accurate one for predictions. The models learn from area, floors, city, material quality and building type. Material and labour costs are predicted, not given as inputs. Near-perfect scores are expected here because the dataset's rates follow a fixed pattern by city and quality, so expect larger errors on real projects.</p>
     </div>
 
     <div class="train-card">
@@ -208,6 +208,7 @@
                 </div>
             </div>
 
+            {% if metrics.xgb %}
             <div class="model-card xgb">
                 <h2>⚡ XGBoost</h2>
                 <div class="metric">
@@ -223,21 +224,22 @@
                     <span class="metric-value">₹{{ metrics.xgb.mae|floatformat:"0g" }} ({{ metrics.xgb.mape|floatformat:2 }}%)</span>
                 </div>
             </div>
+            {% endif %}
         </div>
 
         <div class="visualizations">
             <h2>📊 Model Performance Visualizations</h2>
             <div class="graphs">
                 <div class="graph-item">
-                    <img src="{% static 'plots/actual_vs_pred.png' %}?v={{ plot_version }}" alt="Actual vs Predicted">
+                    <img src="{{ plots.actual_vs_pred }}" alt="Actual vs Predicted">
                     <h3>Actual vs Predicted Costs</h3>
                 </div>
                 <div class="graph-item">
-                    <img src="{% static 'plots/error.png' %}?v={{ plot_version }}" alt="Error Distribution">
+                    <img src="{{ plots.error }}" alt="Error Distribution">
                     <h3>Prediction Error Distribution</h3>
                 </div>
                 <div class="graph-item">
-                    <img src="{% static 'plots/feature.png' %}?v={{ plot_version }}" alt="Feature Importance">
+                    <img src="{{ plots.feature }}" alt="Feature Importance">
                     <h3>Feature Importance Analysis</h3>
                 </div>
             </div>

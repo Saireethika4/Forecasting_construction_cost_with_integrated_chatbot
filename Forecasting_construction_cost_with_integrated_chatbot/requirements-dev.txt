@@ -1,0 +1,3 @@
+# Local extras. XGBoost is left out of requirements.txt to fit Vercel's size limit.
+-r requirements.txt
+xgboost==3.4.1

@@ -124,3 +124,14 @@ class LabourContact(models.Model):
 
     def __str__(self):
         return f'{self.name} ({self.get_trade_display()}, {self.city})'
+
+
+class StoredFile(models.Model):
+    """A file kept in the database by DatabaseStorage."""
+    name = models.CharField(max_length=255, unique=True)
+    content = models.BinaryField()
+    content_type = models.CharField(max_length=100)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name

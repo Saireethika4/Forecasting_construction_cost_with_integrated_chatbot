@@ -41,6 +41,7 @@ urlpatterns = [
     path('train/', usr.train_model_view, name='train'),
     path('predict/', usr.predict_view, name='predict'),
     path('dataset/', usr.view_dataset, name='dataset'),
+    path('stored/<path:name>', usr.stored_file, name='stored_file'),
     path('rates/', usr.rates_view, name='rates'),
     path('labour/', usr.labour_search, name='labour_search'),
     path('labour/osm/', usr.labour_osm, name='labour_osm'),

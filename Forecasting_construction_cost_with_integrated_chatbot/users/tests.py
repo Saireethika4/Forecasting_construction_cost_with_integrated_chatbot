@@ -1,18 +1,20 @@
 import unittest.mock
-from pathlib import Path
+from io import BytesIO
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 import requests
 from django.contrib.auth.hashers import check_password, make_password
 from django.core.cache import cache
+from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.test import TestCase, override_settings
 from django.urls import reverse
+from PIL import Image
 
 from . import labour, ml, rates
-from .models import ConstructionRate, ConstructionType, LabourContact, SiteRegion, UserRegistrationModel
+from .models import ConstructionRate, ConstructionType, LabourContact, SiteRegion, StoredFile, UserRegistrationModel
 
 
 def make_user(status='active', email='asha@example.com', password='Passw0rdX'):
@@ -96,19 +98,14 @@ class ModelTests(LoggedInTestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.tmp = TemporaryDirectory()
-        cls.patches = [
-            patch.object(ml, 'ARTIFACT_PATH', Path(cls.tmp.name) / 'model.joblib'),
-            patch.object(ml, 'PLOTS_DIR', Path(cls.tmp.name) / 'plots'),
-        ]
-        for p in cls.patches:
-            p.start()
+        cls.media = override_settings(MEDIA_ROOT=cls.tmp.name)
+        cls.media.enable()
         ml._cached.update(mtime=None, bundle=None)
         cls.bundle = ml.train_models()
 
     @classmethod
     def tearDownClass(cls):
-        for p in cls.patches:
-            p.stop()
+        cls.media.disable()
         ml._cached.update(mtime=None, bundle=None)
         cls.tmp.cleanup()
         super().tearDownClass()
@@ -118,10 +115,10 @@ class ModelTests(LoggedInTestCase):
         return self.client.post(reverse('predict'), data)
 
     def test_training_produces_accurate_models_and_plots(self):
-        self.assertGreater(self.bundle['metrics']['xgb']['test_r2'], 0.99)
-        self.assertLess(self.bundle['metrics'][('xgb')]['mape'], 2)
-        for name in ('actual_vs_pred', 'error', 'feature'):
-            self.assertTrue((ml.PLOTS_DIR / f'{name}.png').exists())
+        self.assertGreater(self.bundle['metrics']['rf']['test_r2'], 0.99)
+        self.assertLess(self.bundle['metrics']['rf']['mape'], 2)
+        for name in ml.PLOT_NAMES.values():
+            self.assertTrue(default_storage.exists(name))
 
     def test_training_page_posts_and_shows_results(self):
         response = self.client.post(reverse('train'), follow=True)
@@ -253,8 +250,15 @@ class ChatbotTests(LoggedInTestCase):
 
     @override_settings(GEMINI_API_KEY='x')
     def test_ai_failure_still_helps(self):
-        with patch('google.genai.Client', side_effect=RuntimeError('down')):
+        with patch('users.chatbot.requests.post', side_effect=requests.ConnectionError('down')):
             self.assertIn('I can help with', self.chat('tell me a joke'))
+
+    @override_settings(GEMINI_API_KEY='x')
+    def test_ai_answer_is_returned(self):
+        reply = {'candidates': [{'content': {'parts': [{'text': 'Cure for 7 days.'}]}}]}
+        with patch('users.chatbot.requests.post') as post:
+            post.return_value.json.return_value = reply
+            self.assertEqual(self.chat('tell me a joke'), 'Cure for 7 days.')
 
     def test_empty_message(self):
         self.assertIn('type a question', self.chat('   '))
@@ -394,3 +398,44 @@ class DatasetTests(LoggedInTestCase):
         response = self.client.get(reverse('dataset'), {'page': 2})
         self.assertContains(response, 'Page 2 of 200')
         self.assertContains(response, 'Total_Cost')
+
+
+@override_settings(
+    USE_DATABASE_STORAGE=True,
+    STORAGES={'default': {'BACKEND': 'users.storage.DatabaseStorage'},
+              'staticfiles': {'BACKEND': 'django.contrib.staticfiles.storage.StaticFilesStorage'}},
+)
+class DatabaseStorageTests(LoggedInTestCase):
+    def setUp(self):
+        super().setUp()
+        ml._cached.update(mtime=None, bundle=None)
+        self.addCleanup(ml._cached.update, mtime=None, bundle=None)
+
+    def test_uploaded_image_is_stored_and_served(self):
+        buffer = BytesIO()
+        Image.new('RGB', (2, 2)).save(buffer, 'PNG')
+        photo = SimpleUploadedFile('me.png', buffer.getvalue(), content_type='image/png')
+        self.client.post(reverse('UserRegisterForm'), {
+            'name': 'Ravi', 'loginid': 'ravi', 'email': 'r@example.com', 'password': 'Passw0rdX',
+            'mobile': '9876543210', 'locality': 'Area', 'address': 'Street', 'image': photo,
+        })
+        user = UserRegistrationModel.objects.get(loginid='ravi')
+        response = self.client.get(user.image.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response['Content-Type'], 'image/png')
+        self.assertEqual(response.content, buffer.getvalue())
+
+    def test_training_persists_and_model_file_is_not_public(self):
+        self.client.post(reverse('train'))
+        self.assertTrue(StoredFile.objects.filter(name=ml.ARTIFACT_NAME).exists())
+        self.assertEqual(self.client.get(reverse('stored_file', args=[ml.ARTIFACT_NAME])).status_code, 404)
+        page = self.client.get(reverse('train'))
+        image = page.context['plots']['error']
+        self.assertEqual(self.client.get(image).status_code, 200)
+        ml._cached.update(mtime=None, bundle=None)  # as a fresh serverless instance
+        self.assertGreater(ml.predict_cost(2000, 2, 'Mumbai', 'Medium', 'Residential')['total'], 0)
+
+    def test_retraining_replaces_files(self):
+        ml.train_models()
+        ml.train_models()
+        self.assertEqual(StoredFile.objects.filter(name=ml.ARTIFACT_NAME).count(), 1)

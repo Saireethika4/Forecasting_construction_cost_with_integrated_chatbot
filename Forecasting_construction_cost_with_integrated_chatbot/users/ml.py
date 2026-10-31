@@ -5,14 +5,17 @@ only. Total_Cost in the dataset is effectively Material_Cost + Labor_Cost, so
 those columns must not be used as inputs. Predicting a per-sq.ft rate also
 lets estimates scale with area beyond the range seen in training.
 """
-from datetime import datetime
 from functools import lru_cache
+from io import BytesIO
 from pathlib import Path
 
 import joblib
 import numpy as np
 import pandas as pd
 from django.conf import settings
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
+from django.utils import timezone
 from matplotlib.figure import Figure
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestRegressor
@@ -20,11 +23,15 @@ from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error,
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
-from xgboost import XGBRegressor
+
+try:
+    from xgboost import XGBRegressor
+except ImportError:  # not installed on Vercel, to fit its size limit
+    XGBRegressor = None
 
 DATASET_PATH = Path(settings.MEDIA_ROOT) / 'construction_cost_dataset.csv'
-ARTIFACT_PATH = Path(settings.BASE_DIR) / 'ml_artifacts' / 'cost_model.joblib'
-PLOTS_DIR = Path(settings.BASE_DIR) / 'static' / 'plots'
+ARTIFACT_NAME = 'ml_artifacts/cost_model.joblib'
+PLOT_NAMES = {'actual_vs_pred': 'plots/actual_vs_pred.png', 'error': 'plots/error.png', 'feature': 'plots/feature.png'}
 
 CATEGORICAL = ['City', 'Material_Quality', 'Building_Type']
 FEATURES = ['Area_sqft', 'Floors'] + CATEGORICAL
@@ -62,27 +69,43 @@ def _total(pipeline, df):
     return pipeline.predict(df[FEATURES]).sum(axis=1) * df['Area_sqft'].to_numpy()
 
 
-def _save_plots(y_test, predicted, feature_names, importances):
-    PLOTS_DIR.mkdir(parents=True, exist_ok=True)
+def _store(name, data):
+    if default_storage.exists(name):
+        default_storage.delete(name)
+    default_storage.save(name, ContentFile(data))
 
+
+def _store_figure(key, fig):
+    buffer = BytesIO()
+    fig.savefig(buffer, format='png', bbox_inches='tight')
+    _store(PLOT_NAMES[key], buffer.getvalue())
+
+
+def _save_plots(y_test, predicted, feature_names, importances):
     fig = Figure()
     ax = fig.subplots()
     ax.scatter(y_test, predicted, s=8, alpha=0.5)
     ax.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], color='gray', linewidth=1)
     ax.set(xlabel='Actual (₹)', ylabel='Predicted (₹)', title='Actual vs Predicted')
-    fig.savefig(PLOTS_DIR / 'actual_vs_pred.png', bbox_inches='tight')
+    _store_figure('actual_vs_pred', fig)
 
     fig = Figure()
     ax = fig.subplots()
     ax.hist(y_test - predicted, bins=30)
     ax.set(xlabel='Error (₹)', ylabel='Projects', title='Error Distribution')
-    fig.savefig(PLOTS_DIR / 'error.png', bbox_inches='tight')
+    _store_figure('error', fig)
 
     fig = Figure()
     ax = fig.subplots()
     ax.barh(feature_names, importances)
     ax.set(xlabel='Importance', title='Feature Importance')
-    fig.savefig(PLOTS_DIR / 'feature.png', bbox_inches='tight')
+    _store_figure('feature', fig)
+
+
+def plot_urls():
+    """Plot addresses, versioned so browsers fetch new images after retraining."""
+    version = int(default_storage.get_modified_time(ARTIFACT_NAME).timestamp())
+    return {key: f'{default_storage.url(name)}?v={version}' for key, name in PLOT_NAMES.items()}
 
 
 def train_models():
@@ -91,8 +114,9 @@ def train_models():
     train, test = train_test_split(df, test_size=0.3, random_state=42)
     candidates = {
         'rf': ('Random Forest', RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)),
-        'xgb': ('XGBoost', XGBRegressor(n_estimators=300, max_depth=4, learning_rate=0.08, random_state=42)),
     }
+    if XGBRegressor is not None:
+        candidates['xgb'] = ('XGBoost', XGBRegressor(n_estimators=300, max_depth=4, learning_rate=0.08, random_state=42))
     results = {}
     for key, (label, regressor) in candidates.items():
         pipeline = _pipeline(regressor)
@@ -118,7 +142,7 @@ def train_models():
         'model_label': best['label'],
         # 95% of held-out projects were within this percentage of the actual cost
         'error_p95': float(np.percentile(np.abs(y_test - best['test_pred']) / y_test * 100, 95)),
-        'trained_at': datetime.now().strftime('%d %b %Y, %H:%M'),
+        'trained_at': timezone.localtime().strftime('%d %b %Y, %H:%M'),
         'rows': len(df),
         'area_range': (int(df['Area_sqft'].min()), int(df['Area_sqft'].max())),
         'max_floors': int(df['Floors'].max()),
@@ -127,20 +151,20 @@ def train_models():
             for key, r in results.items()
         },
     }
-    ARTIFACT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    temp_path = ARTIFACT_PATH.with_suffix('.tmp')
-    joblib.dump(bundle, temp_path)
-    temp_path.replace(ARTIFACT_PATH)
+    buffer = BytesIO()
+    joblib.dump(bundle, buffer)
+    _store(ARTIFACT_NAME, buffer.getvalue())
     return bundle
 
 
 def trained_bundle():
     """The saved bundle, or None if nothing has been trained yet."""
-    if not ARTIFACT_PATH.exists():
+    if not default_storage.exists(ARTIFACT_NAME):
         return None
-    mtime = ARTIFACT_PATH.stat().st_mtime
-    if _cached['mtime'] != mtime:
-        _cached.update(mtime=mtime, bundle=joblib.load(ARTIFACT_PATH))
+    modified = default_storage.get_modified_time(ARTIFACT_NAME)
+    if _cached['mtime'] != modified:
+        with default_storage.open(ARTIFACT_NAME) as stored:
+            _cached.update(mtime=modified, bundle=joblib.load(BytesIO(stored.read())))
     return _cached['bundle']
 
 
