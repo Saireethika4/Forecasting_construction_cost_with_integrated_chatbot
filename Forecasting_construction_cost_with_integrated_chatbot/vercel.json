@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "django",
   "functions": {
     "Forecasting_construction_cost_with_integrated_chatbot/wsgi.py": {
       "maxDuration": 60,

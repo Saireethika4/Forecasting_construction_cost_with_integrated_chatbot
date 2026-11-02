@@ -78,7 +78,11 @@ def deactivateUser(request, id):
 @admin_required
 @require_POST
 def deleteUser(request, id):
-    UserRegistrationModel.objects.filter(id=id).delete()
+    for user in UserRegistrationModel.objects.filter(id=id):
+        # Stored photos are served publicly, so they must go with the account
+        if user.image:
+            user.image.delete(save=False)
+        user.delete()
     return redirect('RegisterUsersView')
 
 

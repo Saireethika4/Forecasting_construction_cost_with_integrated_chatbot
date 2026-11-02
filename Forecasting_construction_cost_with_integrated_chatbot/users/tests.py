@@ -6,6 +6,7 @@ from unittest.mock import patch
 import requests
 from django.contrib.auth.hashers import check_password, make_password
 from django.core.cache import cache
+from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
@@ -424,6 +425,15 @@ class DatabaseStorageTests(LoggedInTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response['Content-Type'], 'image/png')
         self.assertEqual(response.content, buffer.getvalue())
+
+    def test_deleting_a_user_removes_their_photo(self):
+        user = self.user
+        user.image.save('me.png', ContentFile(b'x'))
+        session = self.client.session
+        session['is_admin'] = True
+        session.save()
+        self.client.post(reverse('delete_users', args=[user.id]))
+        self.assertFalse(StoredFile.objects.exists())
 
     def test_training_persists_and_model_file_is_not_public(self):
         self.client.post(reverse('train'))

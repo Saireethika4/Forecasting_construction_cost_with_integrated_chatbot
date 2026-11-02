@@ -10,7 +10,7 @@ Requires Python 3.12. On macOS, XGBoost may also need `brew install libomp`.
 cd Forecasting_construction_cost_with_integrated_chatbot
 python3.12 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 cp .env.example .env              # then edit the values
 python manage.py migrate
 python manage.py seed_sample_labour   # optional demo listings
@@ -45,4 +45,15 @@ Run the tests with `python manage.py test`.
 - **Gemini (optional):** set `GEMINI_API_KEY` in `.env`. Everything else in the chatbot works without it.
 - **OpenStreetMap Nominatim and Overpass:** used for places outside the built-in list and for public listings. They need no key, but are shared public services that are sometimes busy. The search sends the location being searched to them.
 
-This setup is for local development. A public deployment also needs `DJANGO_DEBUG=False`, a production web server, and static and media file hosting.
+## Deployment
+
+The app runs on Vercel at https://construction-cost-estimator-six.vercel.app, with a Neon Postgres database. Deploy from the folder containing `manage.py`:
+
+```bash
+vercel deploy --prod
+```
+
+- Deployments must set `DJANGO_SECRET_KEY`, `DATABASE_URL` and an `ADMIN_PASSWORD` of at least 12 characters, or the app will not start.
+- Run `python manage.py migrate` against the production database (`DATABASE_URL_UNPOOLED`) whenever a change adds a migration. Vercel does not run migrations for you.
+- Photos, trained models and charts are stored in the database on Vercel.
+- XGBoost is only in `requirements-dev.txt`, to fit Vercel's size limit. Use `pip install -r requirements-dev.txt` locally to compare it with Random Forest.
