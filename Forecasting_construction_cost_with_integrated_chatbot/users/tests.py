@@ -288,9 +288,15 @@ class ChatbotTests(LoggedInTestCase):
             ('why does building on a hill station cost more', 'Hill Station'),
             ('building code', 'local authority'),
             ('who are you', 'CostForge'),
+            ('How do I choose a contractor?', 'itemised quotes'),
             ('what does this project do', 'estimates construction costs'),
         ):
             self.assertIn(expected, self.chat(question), question)
+
+    @override_settings(ANTHROPIC_API_KEY='', GROQ_API_KEY='')
+    def test_specific_questions_do_not_get_a_generic_answer(self):
+        for question in ('difference between a raft and a pile foundation', 'what is a brick lintel', 'what is the density of steel'):
+            self.assertIn("don't have a detailed answer", self.chat(question), question)
 
     @override_settings(ANTHROPIC_API_KEY='', GROQ_API_KEY='')
     def test_on_topic_gap_is_admitted_not_refused(self):
@@ -341,6 +347,13 @@ class ChatbotTests(LoggedInTestCase):
         self.assertIn('Answer only questions', messages[0]['content'])
         self.assertEqual(messages[1], {'role': 'user', 'content': 'Average cost in Delhi'})
         self.assertEqual(messages[-1], {'role': 'user', 'content': 'what is a lintel in a building'})
+
+    @override_settings(ANTHROPIC_API_KEY='', GROQ_API_KEY='x')
+    def test_ai_reply_keeps_bold_but_drops_single_asterisks(self):
+        reply = {'choices': [{'message': {'content': '**Lintel** *varies by site*'}}]}
+        with patch('users.chatbot.requests.post') as post:
+            post.return_value.json.return_value = reply
+            self.assertEqual(self.chat('what is a lintel in a building'), '**Lintel** varies by site')
 
     @override_settings(ANTHROPIC_API_KEY='', GROQ_API_KEY='x')
     def test_groq_out_of_scope_and_failure_are_handled(self):

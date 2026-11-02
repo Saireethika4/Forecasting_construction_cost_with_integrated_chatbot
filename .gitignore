@@ -10,3 +10,5 @@ Forecasting_construction_cost_with_integrated_chatbot/ml_artifacts/
 Forecasting_construction_cost_with_integrated_chatbot/staticfiles/
 Forecasting_construction_cost_with_integrated_chatbot/media/plots/
 Forecasting_construction_cost_with_integrated_chatbot/media/ml_artifacts/
+.vercel
+.env*
