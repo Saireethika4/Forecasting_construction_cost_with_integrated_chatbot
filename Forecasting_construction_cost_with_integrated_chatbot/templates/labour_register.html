@@ -1,14 +1,17 @@
 {% extends 'base.html' %}
-{% block title %}List as Labour | Construction Cost Estimator{% endblock %}
+{% block title %}List as Labour | CostForge{% endblock %}
 {% block content %}
-<div class="bg-white text-dark rounded-4 shadow p-4 mx-auto mt-5" style="max-width: 760px;">
-    <h2>👷 List yourself as labour</h2>
-    <p>Workers and contractors can join the directory so that people building nearby can contact them. Listings appear after admin approval.</p>
-    {% for message in messages %}<div class="alert alert-{{ message.tags }}">{{ message }}</div>{% endfor %}
-    <form method="POST">
-        {% csrf_token %}
-        {% include 'labour_form_fields.html' %}
-        <button class="btn btn-primary">Submit listing</button>
-    </form>
+<div class="auth-wrap">
+    <section class="panel auth-card wide">
+        <p class="eyebrow">Labour directory</p>
+        <h1>List yourself as labour</h1>
+        <p class="muted">Workers and contractors can join the directory so that people building nearby can contact them. Listings appear after admin approval.</p>
+        {% for message in messages %}<div class="alert alert-{{ message.tags }}">{{ message }}</div>{% endfor %}
+        <form method="POST">
+            {% csrf_token %}
+            {% include 'labour_form_fields.html' %}
+            <div class="form-actions"><button class="btn btn-primary btn-block">Submit listing</button></div>
+        </form>
+    </section>
 </div>
 {% endblock %}

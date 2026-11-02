@@ -1,0 +1,26 @@
+{% extends 'layout.html' %}
+
+{% block body %}
+<div class="shell">
+    <div class="scrim" id="scrim"></div>
+    <aside class="sidebar" id="sideNav" aria-label="Main">
+        <a class="brand" href="{% block home_url %}{% endblock %}">{% include 'brand.html' %}</a>
+        <nav class="side-nav">{% block nav %}{% endblock %}</nav>
+        <div class="side-foot">
+            {% block side_user %}{% endblock %}
+            <a class="btn btn-ghost btn-block btn-sm" href="{% url 'logout' %}"><i class="fas fa-right-from-bracket"></i> Logout</a>
+        </div>
+    </aside>
+    <div class="main">
+        <header class="mobile-bar">
+            <a class="brand" href="{% block home_url_mobile %}{% endblock %}">{% include 'brand.html' %}</a>
+            <button class="icon-btn" type="button" data-toggle="sideNav" aria-controls="sideNav" aria-expanded="false" aria-label="Menu"><i class="fas fa-bars"></i></button>
+        </header>
+        <main class="content" id="main">
+            {% for message in messages %}<div class="alert alert-{{ message.tags }}">{{ message }}</div>{% endfor %}
+            {% block content %}{% endblock %}
+        </main>
+        <footer class="app-foot">Estimates are for planning. Confirm with quotes before you commit.</footer>
+    </div>
+</div>
+{% endblock %}

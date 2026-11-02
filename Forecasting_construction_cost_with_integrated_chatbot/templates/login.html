@@ -1,137 +1,19 @@
 {% extends 'base.html' %}
-{% load static %}
-
-{% block title %}User Login | Construction Cost Estimator{% endblock %}
+{% block title %}User Login | CostForge{% endblock %}
 
 {% block content %}
-<style>
-  body {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    font-family: 'Segoe UI', sans-serif;
-  }
-
-  .login-container {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-  }
-
-  .login-card {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(18px);
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    border-radius: 16px;
-    padding: 1.6rem;
-    width: 100%;
-    max-width: 330px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-    color: #fff;
-  }
-
-  .login-card h3 {
-    font-size: 1.1rem;
-    text-align: center;
-    margin-bottom: 0.3rem;
-  }
-
-  .login-card p {
-    text-align: center;
-    font-size: 0.8rem;
-    color: #e0e0e0;
-    margin-bottom: 0.8rem;
-  }
-
-  .login-card label {
-    font-size: 0.85rem;
-    margin-bottom: 0.2rem;
-    display: block;
-  }
-
-  .form-control {
-    background-color: #ffffff;
-    border-radius: 7px;
-    border: none;
-    padding: 6px 10px;
-    margin-bottom: 0.6rem;
-    font-size: 0.85rem;
-  }
-
-  .form-control:focus {
-    box-shadow: 0 0 6px rgba(102, 126, 234, 0.6);
-  }
-
-  .btn-primary {
-    width: 100%;
-    padding: 7px;
-    font-size: 0.9rem;
-    border-radius: 7px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border: none;
-    font-weight: bold;
-    margin-top: 5px;
-  }
-
-  .btn-primary:hover {
-    background: linear-gradient(135deg, #5568d3 0%, #653a8e 100%);
-  }
-
-  .small {
-    text-align: center;
-    margin-top: 8px;
-    font-size: 0.8rem;
-  }
-
-  .small a {
-    color: #ffd54f;
-    text-decoration: none;
-  }
-
-  .small a:hover {
-    text-decoration: underline;
-  }
-
-  .alert {
-    font-size: 0.8rem;
-    margin-bottom: 0.6rem;
-  }
-</style>
-
-<div class="login-container">
-  <div class="login-card">
-
-    {% if messages %}
-      {% for message in messages %}
-        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-      {% endfor %}
-    {% endif %}
-
-    <h3><i class="fas fa-user me-1"></i>Login</h3>
-    <p>Access your account</p>
-
-    <form method="POST" action="{% url 'UserLoginCheck' %}">
-      {% csrf_token %}
-      
-      <div>
-        <label>Email</label>
-        <input type="email" name="email" class="form-control" required>
-      </div>
-
-      <div>
-        <label>Password</label>
-        <input type="password" name="password" class="form-control" required>
-      </div>
-
-      <button type="submit" class="btn btn-primary">Login</button>
-    </form>
-
-    <div class="small">
-      New user? 
-      <a href="{% url 'UserRegister' %}">Register</a>
-    </div>
-
-  </div>
+<div class="auth-wrap">
+    <section class="panel auth-card">
+        <p class="eyebrow">User access</p>
+        <h1>Login</h1>
+        {% for message in messages %}<div class="alert alert-{{ message.tags }}">{{ message }}</div>{% endfor %}
+        <form method="POST" action="{% url 'UserLoginCheck' %}" class="stack">
+            {% csrf_token %}
+            <div><label for="email">Email</label><input type="email" id="email" name="email" autocomplete="email" required></div>
+            <div><label for="password">Password</label><input type="password" id="password" name="password" autocomplete="current-password" required></div>
+            <button type="submit" class="btn btn-primary btn-block">Login</button>
+        </form>
+        <p class="auth-foot">New user? <a href="{% url 'UserRegister' %}">Register</a></p>
+    </section>
 </div>
-
 {% endblock %}

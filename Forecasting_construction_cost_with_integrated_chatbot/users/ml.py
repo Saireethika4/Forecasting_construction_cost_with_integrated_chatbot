@@ -33,6 +33,9 @@ DATASET_PATH = Path(settings.MEDIA_ROOT) / 'construction_cost_dataset.csv'
 ARTIFACT_NAME = 'ml_artifacts/cost_model.joblib'
 PLOT_NAMES = {'actual_vs_pred': 'plots/actual_vs_pred.png', 'error': 'plots/error.png', 'feature': 'plots/feature.png'}
 
+PLOT_BACKGROUND, PLOT_TEXT, PLOT_GRID = '#10151d', '#cbd6e2', '#3a4656'
+PLOT_CYAN, PLOT_ORANGE = '#58dcec', '#ff8a1f'
+
 CATEGORICAL = ['City', 'Material_Quality', 'Building_Type']
 FEATURES = ['Area_sqft', 'Floors'] + CATEGORICAL
 
@@ -75,30 +78,46 @@ def _store(name, data):
     default_storage.save(name, ContentFile(data))
 
 
+def _themed_axes():
+    """A figure and axes matching the site's dark theme."""
+    fig = Figure(facecolor=PLOT_BACKGROUND)
+    ax = fig.subplots()
+    ax.set_facecolor(PLOT_BACKGROUND)
+    ax.tick_params(colors=PLOT_TEXT)
+    for spine in ax.spines.values():
+        spine.set_color(PLOT_GRID)
+    return fig, ax
+
+
+def _label(ax, title, xlabel='', ylabel=''):
+    ax.set_title(title, color=PLOT_TEXT)
+    ax.set_xlabel(xlabel, color=PLOT_TEXT)
+    ax.set_ylabel(ylabel, color=PLOT_TEXT)
+
+
 def _store_figure(key, fig):
     buffer = BytesIO()
-    fig.savefig(buffer, format='png', bbox_inches='tight')
+    fig.savefig(buffer, format='png', bbox_inches='tight', dpi=130, facecolor=fig.get_facecolor())
     _store(PLOT_NAMES[key], buffer.getvalue())
 
 
 def _save_plots(y_test, predicted, feature_names, importances):
-    fig = Figure()
-    ax = fig.subplots()
-    ax.scatter(y_test, predicted, s=8, alpha=0.5)
-    ax.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], color='gray', linewidth=1)
-    ax.set(xlabel='Actual (₹)', ylabel='Predicted (₹)', title='Actual vs Predicted')
+    fig, ax = _themed_axes()
+    ax.scatter(y_test, predicted, s=8, alpha=0.5, color=PLOT_CYAN)
+    ax.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], color=PLOT_ORANGE, linewidth=1)
+    _label(ax, 'Actual vs Predicted', 'Actual (₹)', 'Predicted (₹)')
+    ax.xaxis.get_offset_text().set_color(PLOT_TEXT)
+    ax.yaxis.get_offset_text().set_color(PLOT_TEXT)
     _store_figure('actual_vs_pred', fig)
 
-    fig = Figure()
-    ax = fig.subplots()
-    ax.hist(y_test - predicted, bins=30)
-    ax.set(xlabel='Error (₹)', ylabel='Projects', title='Error Distribution')
+    fig, ax = _themed_axes()
+    ax.hist(y_test - predicted, bins=30, color=PLOT_CYAN)
+    _label(ax, 'Error Distribution', 'Error (₹)', 'Projects')
     _store_figure('error', fig)
 
-    fig = Figure()
-    ax = fig.subplots()
-    ax.barh(feature_names, importances)
-    ax.set(xlabel='Importance', title='Feature Importance')
+    fig, ax = _themed_axes()
+    ax.barh(feature_names, importances, color=PLOT_ORANGE)
+    _label(ax, 'Feature Importance', 'Importance')
     _store_figure('feature', fig)
 
 

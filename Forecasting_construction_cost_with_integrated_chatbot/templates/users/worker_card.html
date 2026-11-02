@@ -1,19 +1,17 @@
-<div class="col-md-6 col-lg-4">
-    <div class="worker-card">
-        <h5>{{ worker.name }}</h5>
-        <p>
-            <span class="badge bg-primary">{{ worker.get_trade_display }}</span>
-            {% if worker.is_available %}<span class="badge bg-success">Available</span>{% else %}<span class="badge bg-secondary">Busy</span>{% endif %}
-            {% if worker.is_sample %}<span class="badge bg-warning text-dark">Sample</span>{% endif %}
-        </p>
-        <p>📍 {% if worker.locality %}{{ worker.locality }}, {% endif %}{{ worker.city }} · {{ worker.distance|floatformat:1 }} km away</p>
-        {% if worker.is_sample %}
-        <p>📞 {{ worker.phone }}</p>
-        {% if worker.email %}<p>✉️ {{ worker.email }}</p>{% endif %}
-        {% else %}
-        <p>📞 <a href="tel:+91{{ worker.phone }}">{{ worker.phone }}</a></p>
-        {% if worker.email %}<p>✉️ <a href="mailto:{{ worker.email }}">{{ worker.email }}</a></p>{% endif %}
-        {% endif %}
-        <p>{% if worker.daily_wage %}💰 ₹{{ worker.daily_wage }}/day · {% endif %}{{ worker.experience_years }} yrs experience</p>
+<article class="worker-card">
+    <h3>{{ worker.name }}</h3>
+    <div class="badge-row">
+        <span class="badge badge-trade">{{ worker.get_trade_display }}</span>
+        {% if worker.is_available %}<span class="badge badge-ok">Available</span>{% else %}<span class="badge">Busy</span>{% endif %}
+        {% if worker.is_sample %}<span class="badge badge-sample">Sample</span>{% endif %}
     </div>
-</div>
+    <p><i class="fas fa-location-dot"></i>{% if worker.locality %}{{ worker.locality }}, {% endif %}{{ worker.city }} · {{ worker.distance|floatformat:1 }} km away</p>
+    {% if worker.is_sample %}
+    <p><i class="fas fa-phone"></i>{{ worker.phone }}</p>
+    {% if worker.email %}<p><i class="fas fa-envelope"></i>{{ worker.email }}</p>{% endif %}
+    {% else %}
+    <p><i class="fas fa-phone"></i><a href="tel:+91{{ worker.phone }}">{{ worker.phone }}</a></p>
+    {% if worker.email %}<p><i class="fas fa-envelope"></i><a href="mailto:{{ worker.email }}">{{ worker.email }}</a></p>{% endif %}
+    {% endif %}
+    <p><i class="fas fa-indian-rupee-sign"></i>{% if worker.daily_wage %}₹{{ worker.daily_wage }}/day · {% endif %}{{ worker.experience_years }} yrs experience</p>
+</article>

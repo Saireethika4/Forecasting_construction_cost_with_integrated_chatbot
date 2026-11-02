@@ -1,239 +1,34 @@
 {% extends 'users/userbase.html' %}
+{% block title %}Dashboard | CostForge{% endblock %}
+
 {% block content %}
-
-<style>
-    .dashboard {
-        padding: 2rem;
-        max-width: 1400px;
-        margin: 0 auto;
-    }
-
-    .welcome-section {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 2rem 3rem;
-        border-radius: 20px;
-        margin-bottom: 2rem;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-    }
-
-    .welcome-left h1 {
-        font-size: 2.2rem;
-        margin-bottom: 0.5rem;
-    }
-
-    .welcome-left p {
-        font-size: 1.1rem;
-        opacity: 0.95;
-    }
-
-    .profile-box {
-        text-align: center;
-    }
-
-    .profile-box img {
-        width: 90px;
-        height: 90px;
-        border-radius: 50%;
-        object-fit: cover;
-        border: 3px solid #fff;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-    }
-
-    .profile-box p {
-        margin-top: 5px;
-        font-size: 0.85rem;
-    }
-
-    .dashboard-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 2rem;
-        margin-bottom: 2rem;
-    }
-
-    .dashboard-card {
-        background: white;
-        border-radius: 15px;
-        padding: 2rem;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-        transition: all 0.3s;
-        cursor: pointer;
-        text-decoration: none;
-        color: inherit;
-        display: block;
-    }
-
-    .dashboard-card:hover {
-        transform: translateY(-10px);
-        box-shadow: 0 15px 40px rgba(0,0,0,0.15);
-    }
-
-    .card-icon {
-        font-size: 3rem;
-        margin-bottom: 1rem;
-    }
-
-    .card-title {
-        font-size: 1.5rem;
-        font-weight: bold;
-        margin-bottom: 0.5rem;
-    }
-
-    .card-description {
-        line-height: 1.6;
-    }
-
-    .card-gradient-1 {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-    }
-
-    .card-gradient-2 {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        color: white;
-    }
-
-    .card-gradient-3 {
-        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-        color: white;
-    }
-
-    .info-section {
-        background: white;
-        border-radius: 15px;
-        padding: 2rem;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-        margin-top: 1.5rem;
-    }
-
-    .info-section h2 {
-        font-size: 1.8rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .feature-list {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1.5rem;
-    }
-
-    .feature-item {
-        display: flex;
-        gap: 1rem;
-    }
-
-    .feature-icon {
-        font-size: 1.8rem;
-    }
-
-    .feature-content h3 {
-        font-size: 1.1rem;
-        margin-bottom: 0.3rem;
-    }
-
-    @media (max-width: 768px) {
-        .welcome-section {
-            flex-direction: column;
-            text-align: center;
-        }
-    }
-</style>
-
-<div class="dashboard">
-
-    <!-- 🔥 Welcome + Profile -->
-    <div class="welcome-section">
-        <div class="welcome-left">
-            <h1>🏗️ Welcome, {{ user.name }}</h1>
-            <p>AI-powered platform for accurate building material and labor cost predictions</p>
-        </div>
-
-        <div class="profile-box">
-            {% if user.image %}
-                <img src="{{ user.image.url }}">
-            {% else %}
-                <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png">
-            {% endif %}
-            <p>Profile</p>
+<section class="panel welcome">
+    <div class="welcome-user">
+        {% if user.image %}<img class="avatar avatar-lg" src="{{ user.image.url }}" alt="">{% else %}<span class="avatar avatar-lg">{{ user.name|slice:":1" }}</span>{% endif %}
+        <div>
+            <p class="eyebrow" style="margin-bottom:.2rem">Dashboard</p>
+            <h1>Welcome, {{ user.name }}</h1>
+            <p>What are you planning to build today?</p>
         </div>
     </div>
+    <a class="btn btn-primary" href="{% url 'predict' %}"><i class="fas fa-calculator"></i> New estimate</a>
+</section>
 
-    <!-- Dashboard Cards -->
-    <div class="dashboard-grid">
-        <a href="{% url 'train' %}" class="dashboard-card card-gradient-1">
-            <div class="card-icon">🤖</div>
-            <div class="card-title">Train Model</div>
-            <div class="card-description">Train machine learning models and view performance.</div>
-        </a>
-
-        <a href="{% url 'predict' %}" class="dashboard-card card-gradient-2">
-            <div class="card-icon">🔮</div>
-            <div class="card-title">Cost Prediction</div>
-            <div class="card-description">Get instant construction cost estimates.</div>
-        </a>
-
-        <a href="{% url 'chat' %}" class="dashboard-card card-gradient-3">
-            <div class="card-icon">💬</div>
-            <div class="card-title">AI Chatbot</div>
-            <div class="card-description">Ask questions and get AI-powered guidance.</div>
-        </a>
-
-        <a href="{% url 'rates' %}" class="dashboard-card card-gradient-1">
-            <div class="card-icon">🌉</div>
-            <div class="card-title">Site-Based Rates</div>
-            <div class="card-description">Rates for bridges, roads and buildings on hills, water bodies and more.</div>
-        </a>
-
-        <a href="{% url 'labour_search' %}" class="dashboard-card card-gradient-2">
-            <div class="card-icon">👷</div>
-            <div class="card-title">Find Labour</div>
-            <div class="card-description">Search for workers near your site with their contact details.</div>
-        </a>
-
-        <a href="{% url 'dataset' %}" class="dashboard-card card-gradient-3">
-            <div class="card-icon">📊</div>
-            <div class="card-title">View Dataset</div>
-            <div class="card-description">Browse the project data behind the predictions.</div>
-        </a>
-    </div>
-
-    <!-- 🔥 User Details -->
-    <div class="info-section">
-        <h2>👤 Your Profile Details</h2>
-
-        <div class="feature-list">
-            <div class="feature-item">
-                <div class="feature-icon">📧</div>
-                <div>
-                    <h3>Email</h3>
-                    <p>{{ user.email }}</p>
-                </div>
-            </div>
-
-            <div class="feature-item">
-                <div class="feature-icon">📱</div>
-                <div>
-                    <h3>Mobile</h3>
-                    <p>{{ user.mobile }}</p>
-                </div>
-            </div>
-
-            <div class="feature-item">
-                <div class="feature-icon">📍</div>
-                <div>
-                    <h3>Address</h3>
-                    <p>{{ user.address }}</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
+<div class="grid grid-3" style="margin-bottom:1.4rem">
+    <a href="{% url 'predict' %}" class="panel tile"><i class="fas fa-arrow-right go"></i><div class="feature-icon"><i class="fas fa-calculator"></i></div><h3>Cost Prediction</h3><p>Estimate buildings, bridges, roads and more.</p></a>
+    <a href="{% url 'rates' %}" class="panel tile"><i class="fas fa-arrow-right go"></i><div class="feature-icon"><i class="fas fa-mountain-sun"></i></div><h3>Site-Based Rates</h3><p>Compare hills, water bodies and other sites.</p></a>
+    <a href="{% url 'labour_search' %}" class="panel tile"><i class="fas fa-arrow-right go"></i><div class="feature-icon"><i class="fas fa-helmet-safety"></i></div><h3>Find Labour</h3><p>Search for workers near your site.</p></a>
+    <a href="{% url 'chat' %}" class="panel tile"><i class="fas fa-arrow-right go"></i><div class="feature-icon"><i class="fas fa-comments"></i></div><h3>AI Chatbot</h3><p>Ask about costs, rates and nearby labour.</p></a>
+    <a href="{% url 'train' %}" class="panel tile"><i class="fas fa-arrow-right go"></i><div class="feature-icon"><i class="fas fa-microchip"></i></div><h3>Train Model</h3><p>Train the models and view their performance.</p></a>
+    <a href="{% url 'dataset' %}" class="panel tile"><i class="fas fa-arrow-right go"></i><div class="feature-icon"><i class="fas fa-table"></i></div><h3>View Dataset</h3><p>Browse the project data behind predictions.</p></a>
 </div>
 
+<section class="panel">
+    <h2>Your Profile Details</h2>
+    <dl class="kv">
+        <div><dt>Email</dt><dd>{{ user.email }}</dd></div>
+        <div><dt>Mobile</dt><dd>{{ user.mobile }}</dd></div>
+        <div><dt>Address</dt><dd>{{ user.address }}</dd></div>
+    </dl>
+</section>
 {% endblock %}

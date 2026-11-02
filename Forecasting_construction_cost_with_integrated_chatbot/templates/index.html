@@ -1,25 +1,70 @@
 {% extends 'base.html' %}
 
 {% block hero %}
-<section class="hero-section">
-    <div class="floating-icon" style="top: 15%; left: 8%;">🏗️</div>
-    <div class="floating-icon" style="top: 55%; right: 10%; font-size: 5rem;">🏢</div>
-
-    <div class="container">
-        <div class="hero-content">
-            <h1>Smart Construction Cost Estimator</h1>
-            <p>AI-powered predictions for smarter planning & budgeting</p>
-            <a href="{% url 'UserRegister' %}" class="btn cta-button">Get Started</a>
-            <a href="{% url 'UserLogin' %}" class="btn cta-button">Login</a>
+<section class="hero">
+    <div>
+        <p class="eyebrow">Construction cost intelligence</p>
+        <h1>Know the cost <em>before</em> you break ground.</h1>
+        <p class="hero-lead">Estimate apartments, hospitals, bridges and roads, see how a hill station or river site changes the price, and find workers near your site.</p>
+        <div class="btn-row">
+            <a href="{% url 'UserRegister' %}" class="btn btn-primary">Get Started <i class="fas fa-arrow-right"></i></a>
+            <a href="{% url 'UserLogin' %}" class="btn">Login</a>
         </div>
     </div>
+    <figure class="panel blueprint" style="margin:0" aria-label="Blueprint drawing of a bridge spanning a river between hills">
+        <svg viewBox="0 0 640 340" role="img" aria-hidden="true">
+            <path class="draw draw-4" d="M0 232 C60 190 90 150 150 128 C185 116 205 170 240 232"/>
+            <path class="draw draw-4" d="M400 232 C440 175 470 120 520 104 C565 90 600 150 640 196"/>
+            <path class="draw" d="M240 262 q20 -9 40 0 t40 0 t40 0 t40 0"/>
+            <path class="draw" d="M214 288 q22 -9 44 0 t44 0 t44 0 t44 0 t44 0"/>
+            <path class="draw draw-3" d="M60 188 H590"/>
+            <path class="draw" d="M210 188 V58 M430 188 V58 M210 188 V272 M430 188 V272"/>
+            <path class="draw draw-2" d="M210 58 L90 188 M210 58 L130 188 M210 58 L170 188 M210 58 L250 188 M210 58 L290 188 M210 58 L320 188"/>
+            <path class="draw draw-2" d="M430 58 L320 188 M430 58 L350 188 M430 58 L390 188 M430 58 L470 188 M430 58 L510 188 M430 58 L550 188"/>
+            <circle class="bp-node" cx="210" cy="58" r="4"/><circle class="bp-node" cx="430" cy="58" r="4"/>
+            <text class="bp-label" x="62" y="98">HILL STATION</text>
+            <text class="bp-label" x="280" y="322">WATER BODY</text>
+            <text class="bp-label" x="505" y="76">HILL STATION</text>
+        </svg>
+        <figcaption class="readout">
+            <span class="small muted">Example: 500 sq.m bridge over a water body<br>Medium quality, indicative rate</span>
+            <strong>₹7.65 crore</strong>
+        </figcaption>
+    </figure>
 </section>
 {% endblock %}
 
 {% block content %}
-<div class="row g-4">
-    <div class="col-md-4"><div class="section-card h-100"><h3>🔮 Cost prediction</h3><p>Machine learning estimates for buildings, trained on project data from five major cities.</p></div></div>
-    <div class="col-md-4"><div class="section-card h-100"><h3>🌉 Site-based rates</h3><p>Compare rates for buildings, bridges, roads and tunnels on hills, water bodies and other sites.</p></div></div>
-    <div class="col-md-4"><div class="section-card h-100"><h3>👷 Nearby labour</h3><p>Search for workers near your site, sorted by distance, with their contact details.</p></div></div>
-</div>
+<section class="stat-strip reveal" aria-label="What is included">
+    <div class="stat"><strong>14</strong><span>construction types</span></div>
+    <div class="stat"><strong>7</strong><span>site conditions</span></div>
+    <div class="stat"><strong>5,000</strong><span>projects in the training data</span></div>
+    <div class="stat"><strong>10</strong><span>labour trades to search</span></div>
+</section>
+
+<section class="grid grid-3" style="margin-bottom:2.4rem">
+    <article class="panel feature reveal">
+        <div class="feature-icon"><i class="fas fa-microchip"></i></div>
+        <h3>Machine learning estimates</h3>
+        <p>Building estimates split into material and labour, from a model trained on project data across five major cities.</p>
+    </article>
+    <article class="panel feature reveal">
+        <div class="feature-icon"><i class="fas fa-mountain-sun"></i></div>
+        <h3>Rates for every site</h3>
+        <p>Compare the same project on plains, hill stations, water bodies, coasts, deserts, forests and dense urban sites.</p>
+    </article>
+    <article class="panel feature reveal">
+        <div class="feature-icon"><i class="fas fa-helmet-safety"></i></div>
+        <h3>Labour near your site</h3>
+        <p>Search by place or current location, sorted by distance, with phone and email details.</p>
+    </article>
+</section>
+
+<section class="panel cta reveal">
+    <div>
+        <h2>Are you a worker or contractor?</h2>
+        <p>List your trade so people building nearby can contact you.</p>
+    </div>
+    <a class="btn" href="{% url 'labour_register' %}">List as Labour</a>
+</section>
 {% endblock %}

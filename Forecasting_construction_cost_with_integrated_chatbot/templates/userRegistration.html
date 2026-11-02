@@ -1,96 +1,32 @@
 {% extends 'base.html' %}
-{% load static %}
-
-{% block title %}User Register | Construction Cost Estimator{% endblock %}
+{% block title %}Register | CostForge{% endblock %}
 
 {% block content %}
-<style>
-  body {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    font-family: 'Segoe UI', sans-serif;
-  }
-
-  .login-container {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-  }
-
-  .login-card {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(18px);
-    border-radius: 16px;
-    padding: 1.6rem;
-    width: 100%;
-    max-width: 330px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-    color: #fff;
-  }
-
-  .login-card h3 {
-    text-align: center;
-    font-size: 1.1rem;
-  }
-
-  .form-control {
-    border-radius: 7px;
-    padding: 6px 10px;
-    margin-bottom: 0.6rem;
-    font-size: 0.85rem;
-  }
-
-  .btn-primary {
-    width: 100%;
-    padding: 7px;
-    border-radius: 7px;
-    font-weight: bold;
-  }
-</style>
-
-<div class="login-container">
-  <div class="login-card">
-
-    <h3><i class="fas fa-user-plus"></i> Register</h3>
-
-    {% if form.errors %}
-      <div class="alert alert-danger small">
-        {% for field, errors in form.errors.items %}{% for error in errors %}<div>{{ error }}</div>{% endfor %}{% endfor %}
-      </div>
-    {% endif %}
-
-    <!-- ✅ IMPORTANT enctype added -->
-    <form method="POST" action="{% url 'UserRegisterForm' %}" enctype="multipart/form-data">
-      {% csrf_token %}
-
-      <input type="text" name="name" value="{{ form.name.value|default_if_none:'' }}" class="form-control" placeholder="Full Name" required>
-
-      <!-- ✅ NEW FIELD -->
-      <input type="text" name="loginid" value="{{ form.loginid.value|default_if_none:'' }}" class="form-control" placeholder="Login ID" required>
-
-      <input type="email" name="email" value="{{ form.email.value|default_if_none:'' }}" class="form-control" placeholder="Email" required>
-
-      <input type="password" name="password" class="form-control" placeholder="Password (8+ chars, upper, lower, number)" required>
-
-      <input type="text" name="mobile" value="{{ form.mobile.value|default_if_none:'' }}" class="form-control" placeholder="Mobile" required>
-
-      <input type="text" name="locality" value="{{ form.locality.value|default_if_none:'' }}" class="form-control" placeholder="Locality" required>
-
-      <input type="text" name="address" value="{{ form.address.value|default_if_none:'' }}" class="form-control" placeholder="Address" required>
-
-      <!-- ✅ IMAGE UPLOAD -->
-      <input type="file" name="image" accept="image/*" class="form-control">
-
-      <button type="submit" class="btn btn-primary">Register</button>
-    </form>
-
-    <div class="small text-center mt-2">
-      Already have an account? 
-      <a href="{% url 'UserLogin' %}" style="color:#ffd54f;">Login</a>
-    </div>
-
-  </div>
+<div class="auth-wrap">
+    <section class="panel auth-card wide">
+        <p class="eyebrow">New account</p>
+        <h1>Register</h1>
+        <p class="muted">An admin activates new accounts before the first login.</p>
+        {% if form.errors %}
+        <div class="alert alert-danger">
+            {% for field, errors in form.errors.items %}{% for error in errors %}<div>{{ error }}</div>{% endfor %}{% endfor %}
+        </div>
+        {% endif %}
+        <form method="POST" action="{% url 'UserRegisterForm' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-grid">
+                <div class="field"><label for="name">Full Name</label><input type="text" id="name" name="name" value="{{ form.name.value|default_if_none:'' }}" autocomplete="name" required></div>
+                <div class="field"><label for="loginid">Login ID</label><input type="text" id="loginid" name="loginid" value="{{ form.loginid.value|default_if_none:'' }}" autocomplete="username" required></div>
+                <div class="field"><label for="email">Email</label><input type="email" id="email" name="email" value="{{ form.email.value|default_if_none:'' }}" autocomplete="email" required></div>
+                <div class="field"><label for="password">Password</label><input type="password" id="password" name="password" placeholder="8+ chars, upper, lower, number" autocomplete="new-password" required></div>
+                <div class="field"><label for="mobile">Mobile</label><input type="tel" id="mobile" name="mobile" value="{{ form.mobile.value|default_if_none:'' }}" autocomplete="tel" required></div>
+                <div class="field"><label for="locality">Locality</label><input type="text" id="locality" name="locality" value="{{ form.locality.value|default_if_none:'' }}" required></div>
+                <div class="field field-wide"><label for="address">Address</label><input type="text" id="address" name="address" value="{{ form.address.value|default_if_none:'' }}" autocomplete="street-address" required></div>
+                <div class="field field-wide"><label for="image">Profile photo (optional, up to 4 MB)</label><input type="file" id="image" name="image" accept="image/*"></div>
+            </div>
+            <div class="form-actions"><button type="submit" class="btn btn-primary btn-block">Register</button></div>
+        </form>
+        <p class="auth-foot">Already have an account? <a href="{% url 'UserLogin' %}">Login</a></p>
+    </section>
 </div>
-
 {% endblock %}

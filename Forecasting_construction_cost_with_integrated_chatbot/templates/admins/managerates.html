@@ -1,31 +1,29 @@
 {% extends 'admins/adminbase.html' %}
 {% block content %}
-<div class="section-card">
-    <h2 class="mb-2 text-center">Construction Rates</h2>
-    <p class="text-center">Rupees per unit at Medium quality. The starting values are indicative, so replace them with your own schedule of rates or quotes.</p>
+<header class="page-head">
+    <p class="eyebrow">Pricing</p>
+    <h1>Construction Rates</h1>
+    <p>Rupees per unit at Medium quality. The starting values are indicative, so replace them with your own schedule of rates or quotes.</p>
+</header>
+<section class="panel">
     <form method="POST">
         {% csrf_token %}
-        <div class="table-responsive">
-            <table class="table table-bordered align-middle">
-                <thead class="table-dark">
-                    <tr>
-                        <th>Construction type</th>
-                        {% for site in sites %}<th title="{{ site.description }}">{{ site.name }}</th>{% endfor %}
-                    </tr>
-                </thead>
+        <div class="table-wrap" tabindex="0" role="region" aria-label="Editable rates">
+            <table>
+                <thead><tr><th class="sticky-col">Construction type</th>{% for site in sites %}<th title="{{ site.description }}">{{ site.name }}</th>{% endfor %}</tr></thead>
                 <tbody>
                     {% for row in rows %}
                     <tr>
-                        <th>{{ row.type.name }}<br><small class="fw-normal">per {{ row.type.unit }}</small></th>
+                        <th class="sticky-col">{{ row.type.name }}<small>per {{ row.type.unit }}</small></th>
                         {% for cell in row.cells %}
-                        <td>{% if cell %}<input type="number" min="1" step="any" name="rate_{{ cell.id }}" value="{{ cell.rate|floatformat:'-2u' }}" class="form-control form-control-sm" style="min-width:110px" aria-label="{{ cell.construction_type.name }} on {{ cell.site.name }}" required>{% endif %}</td>
+                        <td>{% if cell %}<input type="number" min="1" step="any" name="rate_{{ cell.id }}" value="{{ cell.rate|floatformat:'-2u' }}" class="rate-input" aria-label="{{ cell.construction_type.name }} on {{ cell.site.name }}" required>{% endif %}</td>
                         {% endfor %}
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-        <button class="btn btn-primary">Save all rates</button>
+        <div class="form-actions"><button class="btn btn-primary">Save all rates</button></div>
     </form>
-</div>
+</section>
 {% endblock %}

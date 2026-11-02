@@ -1,251 +1,51 @@
 {% extends 'users/userbase.html' %}
+{% block title %}Model Training | CostForge{% endblock %}
+
 {% block content %}
-{% load static %}
+<header class="page-head">
+    <p class="eyebrow">Model lab</p>
+    <h1>Model Training Dashboard</h1>
+    <p>This process trains the available models (Random Forest, plus XGBoost where installed) on the construction project dataset, then keeps the most accurate one for predictions. The models learn from area, floors, city, material quality and building type. Material and labour costs are predicted, not given as inputs. Near-perfect scores are expected here because the dataset's rates follow a fixed pattern by city and quality, so expect larger errors on real projects.</p>
+</header>
 
-<style>
-    .training-container {
-        max-width: 1200px;
-        margin: 2rem auto;
-        padding: 2rem;
-    }
+<section class="panel cta">
+    <div>
+        <h2>Start Model Training</h2>
+        <p>{% if bundle %}Last trained {{ bundle.trained_at }} on {{ bundle.rows }} projects. In use: <strong>{{ bundle.model_label }}</strong>.{% else %}Click to train the models. This may take a few moments.{% endif %}</p>
+    </div>
+    <form method="POST">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary train-btn"><i class="fas fa-play"></i> Train Models Now</button>
+    </form>
+</section>
 
-    .training-header {
-        text-align: center;
-        margin-bottom: 3rem;
-    }
-
-    .training-header h1 {
-        font-size: 2.5rem;
-        color: #333;
-        margin-bottom: 0.5rem;
-    }
-
-    .training-header p {
-        color: #666;
-        font-size: 1.1rem;
-    }
-
-    .train-card {
-        background: white;
-        border-radius: 20px;
-        padding: 3rem;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-        text-align: center;
-    }
-
-    .train-btn {
-        padding: 1.2rem 3rem;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        border-radius: 50px;
-        font-size: 1.2rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s;
-    }
-
-    .train-btn:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
-    }
-
-    .results-section {
-        margin-top: 3rem;
-    }
-
-    .model-results {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 2rem;
-        margin-bottom: 3rem;
-    }
-
-    .model-card {
-        background: white;
-        border-radius: 15px;
-        padding: 2rem;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-    }
-
-    .model-card h2 {
-        font-size: 1.8rem;
-        margin-bottom: 1.5rem;
-        color: #333;
-    }
-
-    .model-card.rf {
-        border-top: 4px solid #2ecc71;
-    }
-
-    .model-card.xgb {
-        border-top: 4px solid #3498db;
-    }
-
-    .metric {
-        display: flex;
-        justify-content: space-between;
-        padding: 0.8rem 0;
-        border-bottom: 1px solid #f0f0f0;
-    }
-
-    .metric:last-child {
-        border-bottom: none;
-    }
-
-    .metric-label {
-        font-weight: 600;
-        color: #555;
-    }
-
-    .metric-value {
-        font-weight: 700;
-        color: #667eea;
-        font-size: 1.1rem;
-    }
-
-    .visualizations {
-        background: white;
-        border-radius: 20px;
-        padding: 2rem;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-    }
-
-    .visualizations h2 {
-        text-align: center;
-        font-size: 2rem;
-        margin-bottom: 2rem;
-        color: #333;
-    }
-
-    .graphs {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 2rem;
-    }
-
-    .graph-item {
-        text-align: center;
-    }
-
-    .graph-item img {
-        width: 100%;
-        border-radius: 10px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }
-
-    .graph-item h3 {
-        margin-top: 1rem;
-        color: #555;
-        font-size: 1.1rem;
-    }
-
-    .info-box {
-        background: #f0f4ff;
-        border-left: 4px solid #667eea;
-        padding: 1.5rem;
-        border-radius: 10px;
-        margin-bottom: 2rem;
-    }
-
-    .info-box p {
-        color: #555;
-        margin: 0;
-        line-height: 1.6;
-    }
-
-    @media (max-width: 768px) {
-        .training-container {
-            padding: 1rem;
-        }
-
-        .train-card {
-            padding: 2rem;
-        }
-
-        .model-results {
-            grid-template-columns: 1fr;
-        }
-    }
-</style>
-
-<div class="training-container">
-    <div class="training-header">
-        <h1>⚙️ Model Training Dashboard</h1>
-        <p>Train machine learning models on construction cost data</p>
+{% if bundle %}
+<div class="results-section">
+    <div class="grid grid-2" style="margin-bottom:1.4rem">
+        <section class="panel model-card {% if bundle.model_label == 'Random Forest' %}is-used{% endif %}">
+            <h2>Random Forest</h2>
+            <div class="metric"><span class="metric-label">Training Score (R²)</span><span class="metric-value">{{ metrics.rf.train_r2|floatformat:4 }}</span></div>
+            <div class="metric"><span class="metric-label">Testing Score (R²)</span><span class="metric-value">{{ metrics.rf.test_r2|floatformat:4 }}</span></div>
+            <div class="metric"><span class="metric-label">Mean Absolute Error</span><span class="metric-value">₹{{ metrics.rf.mae|floatformat:"0g" }} ({{ metrics.rf.mape|floatformat:2 }}%)</span></div>
+        </section>
+        {% if metrics.xgb %}
+        <section class="panel model-card {% if bundle.model_label == 'XGBoost' %}is-used{% endif %}">
+            <h2>XGBoost</h2>
+            <div class="metric"><span class="metric-label">Training Score (R²)</span><span class="metric-value">{{ metrics.xgb.train_r2|floatformat:4 }}</span></div>
+            <div class="metric"><span class="metric-label">Testing Score (R²)</span><span class="metric-value">{{ metrics.xgb.test_r2|floatformat:4 }}</span></div>
+            <div class="metric"><span class="metric-label">Mean Absolute Error</span><span class="metric-value">₹{{ metrics.xgb.mae|floatformat:"0g" }} ({{ metrics.xgb.mape|floatformat:2 }}%)</span></div>
+        </section>
+        {% endif %}
     </div>
 
-    <div class="info-box">
-        <p>💡 <strong>About Training:</strong> This process trains the available models (Random Forest, plus XGBoost where installed) on the construction project dataset, then keeps the most accurate one for predictions. The models learn from area, floors, city, material quality and building type. Material and labour costs are predicted, not given as inputs. Near-perfect scores are expected here because the dataset's rates follow a fixed pattern by city and quality, so expect larger errors on real projects.</p>
-    </div>
-
-    <div class="train-card">
-        <form method="POST">
-            {% csrf_token %}
-            <h2 style="margin-bottom: 1.5rem; color: #333;">🚀 Start Model Training</h2>
-            <p style="color: #666; margin-bottom: 2rem;">Click below to train the ML models. This may take a few moments.</p>
-            <button type="submit" class="train-btn">🤖 Train Models Now</button>
-        </form>
-    </div>
-
-    {% if bundle %}
-    <div class="results-section">
-        <p class="text-center text-muted">Last trained {{ bundle.trained_at }} on {{ bundle.rows }} projects. In use: <strong>{{ bundle.model_label }}</strong>.</p>
-        <div class="model-results">
-            <div class="model-card rf">
-                <h2>🌲 Random Forest</h2>
-                <div class="metric">
-                    <span class="metric-label">Training Score (R²)</span>
-                    <span class="metric-value">{{ metrics.rf.train_r2|floatformat:4 }}</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">Testing Score (R²)</span>
-                    <span class="metric-value">{{ metrics.rf.test_r2|floatformat:4 }}</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">Mean Absolute Error</span>
-                    <span class="metric-value">₹{{ metrics.rf.mae|floatformat:"0g" }} ({{ metrics.rf.mape|floatformat:2 }}%)</span>
-                </div>
-            </div>
-
-            {% if metrics.xgb %}
-            <div class="model-card xgb">
-                <h2>⚡ XGBoost</h2>
-                <div class="metric">
-                    <span class="metric-label">Training Score (R²)</span>
-                    <span class="metric-value">{{ metrics.xgb.train_r2|floatformat:4 }}</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">Testing Score (R²)</span>
-                    <span class="metric-value">{{ metrics.xgb.test_r2|floatformat:4 }}</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-label">Mean Absolute Error</span>
-                    <span class="metric-value">₹{{ metrics.xgb.mae|floatformat:"0g" }} ({{ metrics.xgb.mape|floatformat:2 }}%)</span>
-                </div>
-            </div>
-            {% endif %}
+    <section class="panel visualizations">
+        <h2>Model Performance Visualizations</h2>
+        <div class="grid grid-3 graphs">
+            <figure class="graph-item"><img src="{{ plots.actual_vs_pred }}" alt="Scatter chart of actual against predicted costs" loading="lazy"><figcaption>Actual vs Predicted Costs</figcaption></figure>
+            <figure class="graph-item"><img src="{{ plots.error }}" alt="Histogram of prediction errors" loading="lazy"><figcaption>Prediction Error Distribution</figcaption></figure>
+            <figure class="graph-item"><img src="{{ plots.feature }}" alt="Bar chart of feature importance" loading="lazy"><figcaption>Feature Importance Analysis</figcaption></figure>
         </div>
-
-        <div class="visualizations">
-            <h2>📊 Model Performance Visualizations</h2>
-            <div class="graphs">
-                <div class="graph-item">
-                    <img src="{{ plots.actual_vs_pred }}" alt="Actual vs Predicted">
-                    <h3>Actual vs Predicted Costs</h3>
-                </div>
-                <div class="graph-item">
-                    <img src="{{ plots.error }}" alt="Error Distribution">
-                    <h3>Prediction Error Distribution</h3>
-                </div>
-                <div class="graph-item">
-                    <img src="{{ plots.feature }}" alt="Feature Importance">
-                    <h3>Feature Importance Analysis</h3>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
+    </section>
 </div>
-
+{% endif %}
 {% endblock %}

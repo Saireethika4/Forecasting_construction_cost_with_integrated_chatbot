@@ -1,76 +1,76 @@
 {% extends 'users/userbase.html' %}
 {% load l10n %}
+{% block title %}Find Labour | CostForge{% endblock %}
 
 {% block content %}
-<style>
-    .worker-card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; height: 100%; background: white; }
-    .worker-card h5 { margin-bottom: 4px; overflow-wrap: anywhere; }
-    .worker-card p { margin-bottom: 4px; line-height: 1.5 !important; overflow-wrap: anywhere; }
-</style>
+<header class="page-head">
+    <p class="eyebrow">Labour directory</p>
+    <h1>Find Labour Near You</h1>
+    <p>Search by place or your current location. Results are sorted by distance.</p>
+</header>
 
-<div class="section-card" style="max-width: 1200px;">
-    <h2 class="text-center">👷 Find Labour Near You</h2>
-
-    <form method="GET" id="searchForm" class="row g-3 align-items-end">
+<section class="panel">
+    <form method="GET" id="searchForm">
         <input type="hidden" name="lat" id="lat">
         <input type="hidden" name="lng" id="lng">
-        <div class="col-md-4">
-            <label class="form-label" for="location">Location</label>
-            <input class="form-control" type="text" name="location" id="location" value="{{ location }}" placeholder="City or area, e.g. Shimla">
+        <div class="form-grid">
+            <div class="field">
+                <label for="location">Location</label>
+                <input type="text" name="location" id="location" value="{{ location }}" placeholder="City or area, e.g. Shimla">
+            </div>
+            <div class="field">
+                <label for="trade">Trade</label>
+                <select name="trade" id="trade">
+                    <option value="">All trades</option>
+                    {% for value, label in trades %}<option value="{{ value }}" {% if trade == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="field">
+                <label for="radius">Within</label>
+                <select name="radius" id="radius">
+                    {% for r in radius_choices %}<option value="{{ r }}" {% if radius == r %}selected{% endif %}>{{ r }} km</option>{% endfor %}
+                </select>
+            </div>
+            <div class="field check-field">
+                <label class="check" for="available"><input type="checkbox" name="available" id="available" {% if available_only %}checked{% endif %}><span>Available now only</span></label>
+            </div>
         </div>
-        <div class="col-md-3">
-            <label class="form-label" for="trade">Trade</label>
-            <select class="form-select" name="trade" id="trade">
-                <option value="">All trades</option>
-                {% for value, label in trades %}<option value="{{ value }}" {% if trade == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
-            </select>
-        </div>
-        <div class="col-md-2">
-            <label class="form-label" for="radius">Within</label>
-            <select class="form-select" name="radius" id="radius">
-                {% for r in radius_choices %}<option value="{{ r }}" {% if radius == r %}selected{% endif %}>{{ r }} km</option>{% endfor %}
-            </select>
-        </div>
-        <div class="col-md-3 form-check pb-2 ps-5">
-            <input class="form-check-input" type="checkbox" name="available" id="available" {% if available_only %}checked{% endif %}>
-            <label class="form-check-label" for="available">Available now only</label>
-        </div>
-        <div class="col-12 d-flex flex-wrap gap-2">
-            <button class="btn btn-primary"><i class="fas fa-search"></i> Search</button>
-            <button class="btn btn-outline-primary" type="button" id="useLocation"><i class="fas fa-location-crosshairs"></i> Use my current location</button>
+        <div class="form-actions btn-row">
+            <button class="btn btn-primary"><i class="fas fa-magnifying-glass"></i> Search</button>
+            <button class="btn" type="button" id="useLocation"><i class="fas fa-location-crosshairs"></i> Use my current location</button>
         </div>
     </form>
-    <div id="locationError" class="text-danger small mt-2" role="alert"></div>
+    <div id="locationError" class="field-error" role="alert"></div>
+</section>
 
-    {% if error %}<div class="alert alert-danger mt-3">{{ error }}</div>{% endif %}
+{% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
 
-    {% if searched %}
-    <h4 class="mt-4">{{ results|length }} result{{ results|length|pluralize }} in the directory within {{ radius }} km</h4>
+{% if searched %}
+<section class="panel">
+    <h2>{{ results|length }} result{{ results|length|pluralize }} in the directory within {{ radius }} km</h2>
     {% if has_samples %}
     <div class="alert alert-warning"><strong>Sample records:</strong> entries marked "Sample" are placeholders to demonstrate the feature. They are not real people, so please do not call or email them.</div>
     {% endif %}
-
-    <div class="row g-3">
+    <div class="card-grid">
         {% for worker in results %}{% include 'users/worker_card.html' %}{% endfor %}
     </div>
-
     {% if not results and nearest %}
-    <p class="mt-3">Nobody matched within {{ radius }} km. The closest listings are:</p>
-    <div class="row g-3">
-        {% for worker in nearest %}
-            {% include 'users/worker_card.html' with worker=worker %}
-        {% endfor %}
+    <p>Nobody matched within {{ radius }} km. The closest listings are:</p>
+    <div class="card-grid">
+        {% for worker in nearest %}{% include 'users/worker_card.html' with worker=worker %}{% endfor %}
     </div>
     {% elif not results %}
-    <p class="mt-3">No listings match this search. Try another trade.</p>
+    <p>No listings match this search. Try another trade.</p>
     {% endif %}
+</section>
 
-    <h4 class="mt-4">Public listings from OpenStreetMap</h4>
-    <p class="small text-muted">Businesses near this location that publish contact details on OpenStreetMap. They are not verified by us.</p>
+<section class="panel">
+    <h2>Public listings from OpenStreetMap</h2>
+    <p class="muted small">Businesses near this location that publish contact details on OpenStreetMap. They are not verified by us.</p>
     <div id="osmStatus" role="status"></div>
-    <div id="osmResults" class="row g-3"></div>
-    {% endif %}
-</div>
+    <div id="osmResults" class="card-grid"></div>
+</section>
+{% endif %}
 
 <script>
 document.getElementById('useLocation').addEventListener('click', () => {
@@ -94,9 +94,11 @@ document.getElementById('useLocation').addEventListener('click', () => {
 const osmStatus = document.getElementById('osmStatus');
 const osmResults = document.getElementById('osmResults');
 
-function line(parent, label, value, href) {
+function line(parent, icon, value, href) {
     const row = document.createElement('p');
-    row.textContent = label + ' ';
+    const glyph = document.createElement('i');
+    glyph.className = `fas ${icon}`;
+    row.appendChild(glyph);
     if (href) {
         const link = document.createElement('a');
         link.href = href;
@@ -104,28 +106,25 @@ function line(parent, label, value, href) {
         link.rel = 'noopener nofollow';
         row.appendChild(link);
     } else {
-        row.textContent += value;
+        row.appendChild(document.createTextNode(value));
     }
     parent.appendChild(row);
 }
 
 function showPlace(place) {
-    const col = document.createElement('div');
-    col.className = 'col-md-6 col-lg-4';
-    const card = document.createElement('div');
+    const card = document.createElement('article');
     card.className = 'worker-card';
-    const title = document.createElement('h5');
+    const title = document.createElement('h3');
     title.textContent = place.name;
     card.appendChild(title);
-    line(card, '🛠️', `${place.category} · ${place.distance_km} km away`);
+    line(card, 'fa-screwdriver-wrench', `${place.category} · ${place.distance_km} km away`);
     if (place.phone) {
-        place.phone.split(';').forEach((phone) => line(card, '📞', phone.trim(), 'tel:' + phone.replace(/[^+\d]/g, '')));
+        place.phone.split(';').forEach((phone) => line(card, 'fa-phone', phone.trim(), 'tel:' + phone.replace(/[^+\d]/g, '')));
     }
-    if (place.email) line(card, '✉️', place.email, 'mailto:' + place.email);
-    if (/^https?:\/\//i.test(place.website)) line(card, '🌐', place.website, place.website);
-    if (place.address) line(card, '📍', place.address);
-    col.appendChild(card);
-    osmResults.appendChild(col);
+    if (place.email) line(card, 'fa-envelope', place.email, 'mailto:' + place.email);
+    if (/^https?:\/\//i.test(place.website)) line(card, 'fa-globe', place.website, place.website);
+    if (place.address) line(card, 'fa-location-dot', place.address);
+    osmResults.appendChild(card);
 }
 
 osmStatus.textContent = 'Searching OpenStreetMap…';

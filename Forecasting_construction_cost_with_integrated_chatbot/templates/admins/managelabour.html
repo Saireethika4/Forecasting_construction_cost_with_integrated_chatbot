@@ -1,50 +1,52 @@
 {% extends 'admins/adminbase.html' %}
 {% block content %}
-<div class="section-card" id="add">
-    <h3 class="mb-3">Add a listing</h3>
+<header class="page-head">
+    <p class="eyebrow">Directory</p>
+    <h1>Labour Directory</h1>
+</header>
+<section class="panel" id="add">
+    <h2>Add a listing</h2>
     <form method="POST" action="{% url 'manage_labour' %}#add">
         {% csrf_token %}
         {% include 'labour_form_fields.html' %}
-        <button class="btn btn-primary">Add to directory</button>
+        <div class="form-actions"><button class="btn btn-primary">Add to directory</button></div>
     </form>
-</div>
-<div class="section-card">
-    <h2 class="mb-3 text-center">Labour Directory</h2>
-    <div class="table-responsive">
-        <table class="table table-striped table-bordered align-middle">
-            <thead class="table-dark">
-                <tr><th>Name</th><th>Trade</th><th>Contact</th><th>Location</th><th>Wage/day</th><th>Status</th><th>Actions</th></tr>
-            </thead>
+</section>
+<section class="panel">
+    <h2>All listings</h2>
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Labour listings">
+        <table>
+            <thead><tr><th>Name</th><th>Trade</th><th>Contact</th><th>Location</th><th>Wage/day</th><th>Status</th><th>Actions</th></tr></thead>
             <tbody>
                 {% for worker in page %}
                 <tr>
-                    <td>{{ worker.name }}{% if worker.is_sample %} <span class="badge bg-secondary">Sample</span>{% endif %}</td>
+                    <td>{{ worker.name }}{% if worker.is_sample %} <span class="badge badge-sample">Sample</span>{% endif %}</td>
                     <td>{{ worker.get_trade_display }}</td>
-                    <td>{{ worker.phone }}{% if worker.email %}<br><small>{{ worker.email }}</small>{% endif %}</td>
+                    <td>{{ worker.phone }}{% if worker.email %}<br><small class="muted">{{ worker.email }}</small>{% endif %}</td>
                     <td>{{ worker.locality }}{% if worker.locality %}, {% endif %}{{ worker.city }}</td>
-                    <td>{% if worker.daily_wage %}₹{{ worker.daily_wage }}{% else %}–{% endif %}</td>
-                    <td>{{ worker.get_status_display }}<br><small>{% if worker.is_available %}Available{% else %}Busy{% endif %}</small></td>
-                    <td>
+                    <td class="num">{% if worker.daily_wage %}₹{{ worker.daily_wage }}{% else %}–{% endif %}</td>
+                    <td>{{ worker.get_status_display }}<br><small class="muted">{% if worker.is_available %}Available{% else %}Busy{% endif %}</small></td>
+                    <td style="min-width:200px">
                         {% if worker.status == 'pending' %}
-                        <form method="POST" action="{% url 'labour_action' worker.id 'approve' %}" class="d-inline">{% csrf_token %}<button class="btn btn-success btn-sm mb-1">Approve</button></form>
+                        <form method="POST" action="{% url 'labour_action' worker.id 'approve' %}" class="inline-form">{% csrf_token %}<button class="btn btn-ok btn-sm">Approve</button></form>
                         {% elif worker.is_available %}
-                        <form method="POST" action="{% url 'labour_action' worker.id 'unavailable' %}" class="d-inline">{% csrf_token %}<button class="btn btn-warning btn-sm mb-1">Mark busy</button></form>
+                        <form method="POST" action="{% url 'labour_action' worker.id 'unavailable' %}" class="inline-form">{% csrf_token %}<button class="btn btn-warn btn-sm">Mark busy</button></form>
                         {% else %}
-                        <form method="POST" action="{% url 'labour_action' worker.id 'available' %}" class="d-inline">{% csrf_token %}<button class="btn btn-info btn-sm mb-1">Mark available</button></form>
+                        <form method="POST" action="{% url 'labour_action' worker.id 'available' %}" class="inline-form">{% csrf_token %}<button class="btn btn-sm">Mark available</button></form>
                         {% endif %}
-                        <form method="POST" action="{% url 'labour_action' worker.id 'delete' %}" class="d-inline" onsubmit="return confirm('Delete this listing?');">{% csrf_token %}<button class="btn btn-danger btn-sm mb-1">Delete</button></form>
+                        <form method="POST" action="{% url 'labour_action' worker.id 'delete' %}" class="inline-form" onsubmit="return confirm('Delete this listing?');">{% csrf_token %}<button class="btn btn-danger btn-sm">Delete</button></form>
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="7" class="text-center">No listings yet.</td></tr>
+                <tr><td colspan="7">No listings yet.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
-    <nav class="d-flex justify-content-between align-items-center" aria-label="Labour pages">
-        {% if page.has_previous %}<a class="btn btn-outline-primary btn-sm" href="?page={{ page.previous_page_number }}">Previous</a>{% else %}<span></span>{% endif %}
+    <nav class="pager" aria-label="Labour pages">
+        {% if page.has_previous %}<a class="btn btn-sm" href="?page={{ page.previous_page_number }}">Previous</a>{% else %}<i></i>{% endif %}
         <span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
-        {% if page.has_next %}<a class="btn btn-outline-primary btn-sm" href="?page={{ page.next_page_number }}">Next</a>{% else %}<span></span>{% endif %}
+        {% if page.has_next %}<a class="btn btn-sm" href="?page={{ page.next_page_number }}">Next</a>{% else %}<i></i>{% endif %}
     </nav>
-</div>
+</section>
 {% endblock %}
